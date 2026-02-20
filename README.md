@@ -8,4 +8,4 @@
 
 Следующим образом выглядит UML-диграмма
 
-![uml](media/uml.svg)
+![uml](media/uml.png)
