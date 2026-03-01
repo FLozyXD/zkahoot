@@ -7,14 +7,14 @@ CREATE TABLE IF NOT EXISTS Users(
 CREATE TABLE IF NOT EXISTS Quizzes(
     id SERIAL PRIMARY KEY,
     creator_id INT REFERENCES Users(id),
-	date_of_birth DATE NOT NULL, 
-    date_of_death DATE DEFAULT '2030-01-01'
+	creation_date DATE, 
+    deletion_date DATE
 );
 
 CREATE TABLE IF NOT EXISTS Questions(
     id SERIAL PRIMARY KEY,
     quiz_id INT REFERENCES Quizzes(id),
-    question TEXT,
+    question TEXT NOT NULL,
     answer_id INT REFERENCES Answers(id)   
 );
 
