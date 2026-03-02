@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from DBWrapper import DBWrapper
+from classes.DBWrapper import DBWrapper
 
 
 class Answer(ABC):
