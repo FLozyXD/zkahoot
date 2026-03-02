@@ -14,10 +14,11 @@
 
 Следующим образом выглядит стурктура проекта.
 
-```bash
+```
 .
 |-- README.md
 |-- classes
+|   |-- API.py
 |   |-- Answer.py
 |   |-- DBWrapper.py
 |   |-- Lobby.py
@@ -27,6 +28,7 @@
 |   `-- User.py
 |-- media
 |   `-- uml.png
+|-- requirements.txt
 |-- scheme.sql
 `-- tests
 ```
