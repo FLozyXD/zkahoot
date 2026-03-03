@@ -44,15 +44,16 @@ class TextAnswer(Answer):
     def __init__(self, id: int, answer: str) -> None:
         self.id = id
         self.answer = answer
+        self.answer_type = "text"
 
     def __str__(self) -> str:
-        return f"Answer(id={self.id}, text={self.answer})"
+        return self.answer
 
     def __repr__(self) -> str:
         return str(self)
 
     def __iter__(self):
-        return iter(self.answer)
+        return iter([self.id, self.answer, self.answer_type])
 
     def to_database(self) -> None:
         db = DBWrapper()
@@ -60,7 +61,7 @@ class TextAnswer(Answer):
 
     def modify_database(self) -> None:
         db = DBWrapper()
-        db.modify(self, answer_id=self.id, text=self.answer)
+        db.modify(self, id=self.id)
 
     @staticmethod
     def from_database(**query):
@@ -69,8 +70,8 @@ class TextAnswer(Answer):
         return TextAnswer(result[0], result[1])
 
     def to_json(self) -> dict:
-        return {"id": self.id, "text": self.answer}
+        return {"id": self.id, "answer": self.answer, "type": self.answer_type}
 
     @staticmethod
     def from_json(answer: dict):
-        return TextAnswer(answer.get("id"), answer.get("text"))
+        return TextAnswer(answer["id"], answer["answer"])
