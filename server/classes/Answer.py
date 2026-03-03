@@ -2,57 +2,50 @@ from abc import ABC, abstractmethod
 from classes.DBWrapper import DBWrapper
 
 
-class Answer(ABC):
+class AbstractAnswer(ABC):
     "Answer abstract class."
 
     @abstractmethod
-    def __str__(self) -> str:
-        pass
+    def __str__(self) -> str: ...
 
     @abstractmethod
-    def __repr__(self) -> str:
-        pass
+    def __repr__(self) -> str: ...
 
     @abstractmethod
-    def __iter__(self):
-        pass
+    def __iter__(self): ...
 
     @abstractmethod
-    def to_database(self) -> None:
-        pass
+    def to_database(self) -> None: ...
 
     @abstractmethod
-    def modify_database(self) -> None:
-        pass
+    def modify_database(self) -> None: ...
 
+    @abstractmethod
     @staticmethod
-    @abstractmethod
-    def from_database(**query):
-        pass
+    def from_database(**query): ...
 
     @abstractmethod
-    def to_json(self) -> dict:
-        pass
+    def to_json(self) -> dict: ...
 
+    @abstractmethod
     @staticmethod
-    @abstractmethod
-    def from_json(answer: dict):
-        pass
+    def from_json(answer: dict): ...
 
 
-class TextAnswer(Answer):
+class TextAnswer(AbstractAnswer):
     def __init__(self, id: int, answer: str) -> None:
         self.id = id
         self.answer = answer
+        self.answer_type = "text"
 
     def __str__(self) -> str:
-        return f"Answer(id={self.id}, text={self.answer})"
+        return self.answer
 
     def __repr__(self) -> str:
         return str(self)
 
     def __iter__(self):
-        return iter(self.answer)
+        return iter([self.id, self.answer, self.answer_type])
 
     def to_database(self) -> None:
         db = DBWrapper()
@@ -60,17 +53,17 @@ class TextAnswer(Answer):
 
     def modify_database(self) -> None:
         db = DBWrapper()
-        db.modify(self, answer_id=self.id, text=self.answer)
+        db.modify(self, id=self.id)
 
     @staticmethod
     def from_database(**query):
         db = DBWrapper()
-        result = db.select(TextAnswer, **query)
+        result = db.select(TextAnswer, **query)[0]
         return TextAnswer(result[0], result[1])
 
     def to_json(self) -> dict:
-        return {"id": self.id, "text": self.answer}
+        return {"id": self.id, "answer": self.answer, "type": self.answer_type}
 
     @staticmethod
     def from_json(answer: dict):
-        return TextAnswer(answer.get("id"), answer.get("text"))
+        return TextAnswer(answer["id"], answer["answer"])
