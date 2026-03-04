@@ -32,11 +32,10 @@ class AbstractAnswer(ABC):
     def from_json(answer: dict): ...
 
 
-class TextAnswer(AbstractAnswer):
+class Answer(AbstractAnswer):
     def __init__(self, id: int, answer: str) -> None:
         self.id = id
         self.answer = answer
-        self.answer_type = "text"
 
     def __str__(self) -> str:
         return self.answer
@@ -45,7 +44,7 @@ class TextAnswer(AbstractAnswer):
         return str(self)
 
     def __iter__(self):
-        return iter([self.id, self.answer, self.answer_type])
+        return iter([self.id, self.answer])
 
     def to_database(self) -> None:
         db = DBWrapper()
@@ -58,12 +57,12 @@ class TextAnswer(AbstractAnswer):
     @staticmethod
     def from_database(**query):
         db = DBWrapper()
-        result = db.select(TextAnswer, **query)[0]
-        return TextAnswer(result[0], result[1])
+        result = db.select(Answer, **query)[0]
+        return Answer(result[0], result[1])
 
     def to_json(self) -> dict:
-        return {"id": self.id, "answer": self.answer, "type": self.answer_type}
+        return {"id": self.id, "answer": self.answer}
 
     @staticmethod
     def from_json(answer: dict):
-        return TextAnswer(answer["id"], answer["answer"])
+        return Answer(answer["id"], answer["answer"])
