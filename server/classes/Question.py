@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from classes.DBWrapper import DBWrapper
-from classes.Answer import Answer, TextAnswer
+from classes.Answer import AbstractAnswer, Answer
 
 
 class AbstractQuestion(ABC):
@@ -31,14 +31,17 @@ class AbstractQuestion(ABC):
     def from_json(question: dict): ...
 
 
-class Question(AbstractQuestion):
+class TextQuestion(AbstractQuestion):
+    question_type = "text"
+
     def __init__(
-        self, id: int, quiz_id: int, question: str, answer: Answer
+        self, id: int, quiz_id: int, question: str, answer: Answer, type_dependent: str
     ) -> None:
         self.id = id
         self.quiz_id = quiz_id
         self.question = question
         self.answer = answer
+        self.type_dependent = type_dependent
 
     def __str__(self) -> str:
         return self.question
@@ -47,7 +50,16 @@ class Question(AbstractQuestion):
         return str(self)
 
     def __iter__(self):
-        return iter([self.id, self.quiz_id, self.question, self.answer.id])
+        return iter(
+            [
+                self.id,
+                self.quiz_id,
+                self.question,
+                self.question_type,
+                self.answer.id,
+                self.type_dependent,
+            ]
+        )
 
     def to_database(self) -> None:
         db = DBWrapper()
@@ -63,9 +75,11 @@ class Question(AbstractQuestion):
     @staticmethod
     def from_database(**query) -> AbstractQuestion:
         db = DBWrapper()
-        question = db.select(Question, **query)[0]
-        answer = TextAnswer.from_database(question["answer_id"])
-        return Question(question[0], question[1], question[2], answer)
+        question = db.select(TextQuestion, **query)[0]
+        answer = Answer.from_database(question["answer_id"])
+        return TextQuestion(
+            question[0], question[1], question[2], question[3], answer, question[4]
+        )
 
     def to_json(self) -> dict:
         return {
@@ -73,13 +87,16 @@ class Question(AbstractQuestion):
             "question": self.question,
             "quiz_id": self.quiz_id,
             "answer": self.answer.to_json(),
+            "type_dependent": self.type_dependent,
+            "question_type": self.question_type,
         }
 
     @staticmethod
     def from_json(question: dict) -> AbstractQuestion:
-        return Question(
+        return TextQuestion(
             question["id"],
-            question["question"],
             question["quiz_id"],
-            TextAnswer.from_json(question["answer"]),
+            question["question"],
+            Answer.from_json(question["answer"]),
+            question["type_dependent"],
         )
