@@ -31,6 +31,10 @@ class AbstractAnswer(ABC):
     @staticmethod
     def from_json(answer: dict): ...
 
+    @abstractmethod
+    @staticmethod
+    def from_tuple(answer: tuple): ...
+
 
 class Answer(AbstractAnswer):
     def __init__(self, id: int, answer: str) -> None:
@@ -66,3 +70,7 @@ class Answer(AbstractAnswer):
     @staticmethod
     def from_json(answer: dict):
         return Answer(answer["id"], answer["answer"])
+
+    @staticmethod
+    def from_tuple(answer: tuple):
+        return Answer(answer[0], answer[1])

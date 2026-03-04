@@ -30,6 +30,10 @@ class AbstractQuestion(ABC):
     @staticmethod
     def from_json(question: dict): ...
 
+    @abstractmethod
+    @staticmethod
+    def from_tuple(question: tuple): ...
+
 
 class TextQuestion(AbstractQuestion):
     question_type = "text"
@@ -56,7 +60,7 @@ class TextQuestion(AbstractQuestion):
                 self.quiz_id,
                 self.question,
                 self.question_type,
-                self.answer.id,
+                list(self.answer),
                 self.type_dependent,
             ]
         )
@@ -99,4 +103,15 @@ class TextQuestion(AbstractQuestion):
             question["question"],
             Answer.from_json(question["answer"]),
             question["type_dependent"],
+        )
+
+    @staticmethod
+    def from_tuple(question: tuple):
+        return TextQuestion(
+            question[0],
+            question[1],
+            question[2],
+            question[3],
+            Answer.from_tuple(question[4]),
+            question[5],
         )
