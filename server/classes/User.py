@@ -62,4 +62,5 @@ class User:
 
     @staticmethod
     def from_json(user: dict, /) -> User:
-        return User(user[s] for s in User.__slots__)
+        params = [user[s] for s in User.__slots__]
+        return User(*params)
