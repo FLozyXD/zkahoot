@@ -1,6 +1,8 @@
 from flask import Blueprint, request, abort, session
 from classes.User import User
 from exceptions import UserExistsError, UserNotExistsError, LoginError
+from utils import UnifiedDict
+import secrets
 
 auth = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -10,7 +12,7 @@ class AuthManager:
         self.user = User(login, password)
 
 
-class RegManager(AuthManager):
+class RegistrationManager(AuthManager):
     def register(self) -> dict:
         try:
             self.exists()
@@ -18,10 +20,10 @@ class RegManager(AuthManager):
             return {
                 "status": "Forbidden",
                 "cause": f"User with login {e.login} already exists.",
-            }
+            }, 403
         else:
             self.user.to_database()
-            return {"status": "OK", "cause": None}
+            return {"status": "OK"}, 200
 
     def exists(self) -> None:
         try:
@@ -32,7 +34,7 @@ class RegManager(AuthManager):
             raise UserExistsError(self.user.login)
 
 
-class LoginManager(AuthManager):
+class TokenManager(AuthManager):
     def verify(self) -> bool:
         trg = User(self.login, self.password)
         try:
@@ -43,22 +45,24 @@ class LoginManager(AuthManager):
             if trg != src:
                 raise LoginError
 
-    def set_session(self, session: dict) -> dict:
+    def make_token(self, session: dict) -> dict:
         try:
             self.verify()
         except UserNotExistsError as e:
             return {
                 "status": "Forbidden",
                 "cause": f"User with login {e.login} does not exist.",
-            }
+            }, 403
         except LoginError:
             return {
                 "status": "Forbidden",
                 "cause": "Invalid credentials.",
-            }
+            }, 403
         else:
-            session["token"] = self.user.login
-            return {"status": "OK", "cause": None}
+            sessions = UnifiedDict("sessions")
+            token = secrets.token_hex()
+            sessions[token] = self.user
+            return {"status": "OK", "Token": token}, 200
 
 
 @auth.route("/register", methods=["POST"])
@@ -69,17 +73,17 @@ def register() -> dict:
     except KeyError:
         abort(400)
 
-    rm = RegManager(login, password)
+    rm = RegistrationManager(login, password)
     return rm.register()
 
 
-@auth.route("/login", methods=["PUT"])
-def login() -> dict:
+@auth.route("/get-token", methods=["PUT"])
+def get_token() -> dict:
     body = request.get_json()
     try:
         login, password = body["user"]["login"], body["user"]["password"]
     except KeyError:
         abort(400)
 
-    lm = LoginManager(login, password)
-    return lm.set_session(session)
+    tm = TokenManager(login, password)
+    return tm.make_token(session)
