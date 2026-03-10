@@ -2,6 +2,7 @@ import hashlib
 
 from exceptions import UserNotExistsError
 from classes.DBWrapper import DBWrapper
+from typing import Optional
 
 
 class User:
@@ -38,7 +39,9 @@ class User:
         if not isinstance(other, User):
             return False
         # TODO: Since ID is a primary key, do we have to compare _every_ property?
-        return all(getattr(self, s) == getattr(other, s) for s in User.__slots__)
+        return all(
+            getattr(self, s) == getattr(other, s) for s in User.__slots__
+        )
 
     def to_database(self) -> None:
         db = DBWrapper()
@@ -61,6 +64,6 @@ class User:
         return {s: getattr(self, s) for s in User.__slots__}
 
     @staticmethod
-    def from_json(user: dict, /) -> User:
+    def from_json(user: dict, /):
         params = [user[s] for s in User.__slots__]
         return User(*params)
