@@ -1,0 +1,4 @@
+[general]
+[general.flask_config]
+
+SECRET_KEY = "REMOVED_SECRET"

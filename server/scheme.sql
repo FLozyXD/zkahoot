@@ -12,19 +12,16 @@ CREATE TABLE IF NOT EXISTS Quizzes(
     deletion_date DATE
 );
 
+CREATE TABLE IF NOT EXISTS Answers(
+    id SERIAL PRIMARY KEY,
+    answer VARCHAR(512) NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS Questions(
     id SERIAL PRIMARY KEY,
     quiz_id INT REFERENCES Quizzes(id),
     question VARCHAR(512) NOT NULL,
-    -- тут храним тип ответа
     question_type varchar(32) NOT NULL DEFAULT 'prompt',
     answer_id INT REFERENCES Answers(id),
-    -- тут хранятся данные, что зависят от типа.
-    -- то есть, можно либо хранить всевозможные ответы, либо еще что-то
     type_dependent VARCHAR(512) 
-);
-
-CREATE TABLE IF NOT EXISTS Answers(
-    id SERIAL PRIMARY KEY,
-    answer VARCHAR(512) NOT NULL
 );
