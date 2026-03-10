@@ -7,13 +7,12 @@ class DBWrapper:
             cls.instance = super().__new__(cls)
         return cls.instance
 
-    def __init__(self, dsn: str) -> None:
+    def __init__(self, dsn: str = "postgresql://localhost/zkahoot") -> None:
         if not self.initialised:
             self.db = Postgres(dsn)
             self.initialised = True
 
     def insert(self, obj) -> None:
-
         match obj:
             case User():
                 sql = "INSERT INTO Users (login, password_hash) VALUES (%s, %s) RETURNING id"
@@ -27,23 +26,24 @@ class DBWrapper:
                 raise TypeError("Unsupported object type for insert")
         obj.id = self.db.one(sql, tuple(obj)[1:])
 
-    def delete(self, obj) -> None:
-
-        match obj:
-            case User():
+    def delete(self, cls_type, **query) -> None:
+        match cls_type:
+            case _ if cls_type is User:
                 table = "Users"
-            case Quiz():
+            case _ if cls_type is Quiz:
                 table = "Quizzes"
-            case Answer():
+            case _ if cls_type is Answer:
                 table = "Answers"
-            case Question():
+            case _ if cls_type is Question:
                 table = "Questions"
             case _:
-                raise TypeError("Unsupported object type for delete")
-
-        sql = f"DELETE FROM {table} WHERE id = %s"
-        self.db.run(sql, (obj.id,))
-        obj.id = None
+                raise TypeError("Unsupported type for delete")
+        if not query:
+            raise ValueError(f"Attempted to delete ALL records from '{table}'. ")
+        else:
+            where_clause = " AND ".join([f"{key} = %s" for key in query.keys()])
+            sql = f"DELETE FROM {table} WHERE {where_clause}"
+            self.db.run(sql, tuple(query.values()))
 
     def select(self, cls_type, **query) -> list:
         match cls_type:
@@ -57,20 +57,17 @@ class DBWrapper:
                 table = "Questions"
             case _:
                 raise TypeError("Unsupported type for select")
-
         if not query:
             sql = f"SELECT * FROM {table}"
-            return self.db.all(sql)
+            result = [tuple(r) for r in self.db.all(sql)]
+            return result
         else:
             where_clause = " AND ".join([f"{key} = %s" for key in query.keys()])
             sql = f"SELECT * FROM {table} WHERE {where_clause}"
-            return self.db.all(sql, tuple(query.values()))
+            result = [tuple(r) for r in self.db.all(sql, tuple(query.values()))]
+            return result
 
     def modify(self, obj, **query) -> None:
-
-        if not query:
-            return
-
         match obj:
             case User():
                 table = "Users"
@@ -82,13 +79,12 @@ class DBWrapper:
                 table = "Questions"
             case _:
                 raise TypeError("Unsupported object type for modify")
-
-        set_clause = ", ".join([f"{key} = %s" for key in query.keys()])
-        sql = f"UPDATE {table} SET {set_clause} WHERE id = %s"
-
-        params = tuple(query.values()) + (obj.id,)
-
-        self.db.run(sql, params)
-
-        for key, value in query.items():
-            setattr(obj, key, value)
+        if not query:
+            raise ValueError(f"Attempted to update ALL records from '{table}'. ")
+        else:
+            set_clause = ", ".join([f"{key} = %s" for key in query.keys()])
+            sql = f"UPDATE {table} SET {set_clause} WHERE id = %s"
+            params = tuple(query.values()) + (obj.id,)
+            self.db.run(sql, params)
+            for key, value in query.items():
+                setattr(obj, key, value)
