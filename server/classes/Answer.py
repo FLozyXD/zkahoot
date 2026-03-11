@@ -6,6 +6,9 @@ class AbstractAnswer(ABC):
     "Answer abstract class."
 
     @abstractmethod
+    def __eq__(self, other) -> bool: ...
+
+    @abstractmethod
     def __str__(self) -> str: ...
 
     @abstractmethod
@@ -37,6 +40,11 @@ class AbstractAnswer(ABC):
 
 
 class Answer(AbstractAnswer):
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Answer):
+            return False
+        return self.answer == other.answer
+
     def __init__(self, id: int | None, answer: str) -> None:
         self.id = id
         self.answer = answer

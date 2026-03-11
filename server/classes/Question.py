@@ -4,6 +4,8 @@ from classes.Answer import AbstractAnswer, Answer
 
 
 class AbstractQuestion(ABC):
+    "Question abstract class."
+
     @abstractmethod
     def __str__(self) -> str: ...
 
