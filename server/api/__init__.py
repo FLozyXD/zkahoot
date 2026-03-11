@@ -1,4 +1,4 @@
-from api.auth import auth
+from .auth import auth
 
 from flask import Flask
 from pathlib import Path
