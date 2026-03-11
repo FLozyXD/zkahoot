@@ -37,7 +37,7 @@ class AbstractAnswer(ABC):
 
 
 class Answer(AbstractAnswer):
-    def __init__(self, id: int, answer: str) -> None:
+    def __init__(self, id: int | None, answer: str) -> None:
         self.id = id
         self.answer = answer
 

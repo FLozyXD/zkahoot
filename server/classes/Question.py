@@ -39,7 +39,12 @@ class TextQuestion(AbstractQuestion):
     question_type = "text"
 
     def __init__(
-        self, id: int, quiz_id: int, question: str, answer: Answer, type_dependent: str
+        self,
+        id: int | None,
+        quiz_id: int,
+        question: str,
+        answer: Answer,
+        type_dependent: str,
     ) -> None:
         self.id = id
         self.quiz_id = quiz_id
