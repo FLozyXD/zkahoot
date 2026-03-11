@@ -3,12 +3,12 @@ from classes.Answer import Answer
 from classes.DBWrapper import DBWrapper
 
 class Quiz:
-    def __init__(self, id: int | None, quiz_name: str, creator_id: int) -> None:
+    def __init__(self, id: int | None, quiz_name: str, creator_id: int | None, questions: list[TextQuestion] = []) -> None:
         self.db = DBWrapper()
         self.id = id
         self.quiz_name = quiz_name
         self.creator_id = creator_id
-        self.questions = [TextQuestion.from_tuple(q) for q in self.db.select(TextQuestion, quiz_id=self.id)]
+        self.questions = questions
 
     def __str__(self) -> str:
         return self.quiz_name
@@ -38,11 +38,21 @@ class Quiz:
     def from_database(**query) -> Quiz:
         db = DBWrapper()
         result = db.select(Quiz, **query)[0]
-        return Quiz(result[0], result[1], result[2])
+        questions = [TextQuestion.from_tuple(q) for q in db.select(TextQuestion, quiz_id=result[0])]
+        return Quiz(result[0], result[1], result[2], questions=questions)
 
     def to_json(self) -> dict:
-        return {"id": self.id, "quiz_name": self.quiz_name, "creator_id": self.creator_id, "questions": self.questions}
+        return {
+            "id": self.id,
+            "quiz_name": self.quiz_name,
+            "creator_id": self.creator_id,
+            "questions": [question.to_json() for question in self.questions]
+        }
 
     @staticmethod
     def from_json(quiz: dict) -> Quiz:
-        return Quiz(quiz["id"], quiz["quiz_name"], quiz["creator_id"])
+        return Quiz(
+            quiz["id"],
+            quiz["quiz_name"],
+            quiz["creator_id"],
+            questions=[TextQuestion.from_json(q) for q in quiz["questions"]])
