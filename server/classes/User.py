@@ -11,7 +11,7 @@ class User:
     __slots__ = "id", "login", "password"
 
     def __init__(
-        self, id_: int, login: str, password: str, /, *, do_hash: bool = True
+        self, id_: int | None, login: str, password: str, /, *, do_hash: bool = True
     ) -> None:
         # It's critical that no empty arguments make their way here.
         # Arguments are also assumed to be sanitized.
