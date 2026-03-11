@@ -20,10 +20,10 @@ class Quiz:
         return iter([self.id, self.quiz_name, self.creator_id])
     
     def check(self, answers: list[Answer]) -> list[bool]:
-        return [str(self.questions[i].answer).lower() == str(answers[i]).lower() for i in range(len(answers))]
+        return [self.questions[i].answer == answers[i] for i in range(len(answers))]
     
     def immediate_check(self, answer: Answer, question_index: int) -> bool:  # whynot
-        return str(self.questions[question_index].answer).lower() == str(answer).lower()
+        return self.questions[question_index].answer == answer
 
     def to_database(self) -> None:
         self.db.insert(self)
