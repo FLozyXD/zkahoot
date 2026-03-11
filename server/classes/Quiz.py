@@ -3,7 +3,7 @@ from classes.Answer import Answer
 from classes.DBWrapper import DBWrapper
 
 class Quiz:
-    def __init__(self, id: int, quiz_name: str, creator_id: int) -> None:
+    def __init__(self, id: int | None, quiz_name: str, creator_id: int) -> None:
         self.db = DBWrapper()
         self.id = id
         self.quiz_name = quiz_name
