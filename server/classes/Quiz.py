@@ -1,4 +1,5 @@
 from classes.Question import TextQuestion
+from classes.Answer import Answer
 from classes.DBWrapper import DBWrapper
 
 class Quiz:
@@ -17,6 +18,12 @@ class Quiz:
 
     def __iter__(self):
         return iter([self.id, self.quiz_name, self.creator_id])
+    
+    def check(self, answers: list[Answer]) -> list[bool]:
+        return [str(self.questions[i].answer).lower() == str(answers[i]).lower() for i in range(len(answers))]
+    
+    def immediate_check(self, answer: Answer, question_index: int) -> bool:  # whynot
+        return str(self.questions[question_index].answer).lower() == str(answer).lower()
 
     def to_database(self) -> None:
         self.db.insert(self)
