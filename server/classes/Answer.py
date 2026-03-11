@@ -20,24 +20,24 @@ class AbstractAnswer(ABC):
     @abstractmethod
     def modify_database(self) -> None: ...
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def from_database(**query): ...
 
     @abstractmethod
     def to_json(self) -> dict: ...
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def from_json(answer: dict): ...
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def from_tuple(answer: tuple): ...
 
 
 class Answer(AbstractAnswer):
-    def __init__(self, id: int, answer: str) -> None:
+    def __init__(self, id: int | None, answer: str) -> None:
         self.id = id
         self.answer = answer
 
