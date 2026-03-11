@@ -27,6 +27,9 @@ class Quiz:
 
     def to_database(self) -> None:
         self.db.insert(self)
+        for question in self.questions:
+            question.quiz_id = self.id
+            question.to_database()
 
     def modify_database(self) -> None:
         self.db.modify(self, id=self.id)
