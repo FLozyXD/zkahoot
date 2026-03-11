@@ -1,3 +1,6 @@
+from postgres import Postgres
+
+
 class DBWrapper:
     instance = None
     initialised = False
@@ -13,28 +16,28 @@ class DBWrapper:
             self.initialised = True
 
     def insert(self, obj) -> None:
-        match obj:
-            case User():
+        match obj.__class__.__name__:
+            case "User":
                 sql = "INSERT INTO Users (login, password_hash) VALUES (%s, %s) RETURNING id"
-            case Quiz():
+            case "Quiz":
                 sql = "INSERT INTO Quizzes (creator_id, creation_date, deletion_date) VALUES (%s, %s, %s) RETURNING id"
-            case Answer():
+            case "Answer":
                 sql = "INSERT INTO Answers (answer) VALUES (%s) RETURNING id"
-            case Question():
+            case "Question":
                 sql = "INSERT INTO Questions (quiz_id, question, question_type, answer_id) VALUES (%s, %s, %s, %s) RETURNING id"
             case _:
                 raise TypeError("Unsupported object type for insert")
         obj.id = self.db.one(sql, tuple(obj)[1:])
 
     def delete(self, cls_type, **query) -> None:
-        match cls_type:
-            case _ if cls_type is User:
+        match cls_type.__name__:
+            case "User":
                 table = "Users"
-            case _ if cls_type is Quiz:
+            case "Quiz":
                 table = "Quizzes"
-            case _ if cls_type is Answer:
+            case "Answer":
                 table = "Answers"
-            case _ if cls_type is Question:
+            case "Question":
                 table = "Questions"
             case _:
                 raise TypeError("Unsupported type for delete")
@@ -46,14 +49,14 @@ class DBWrapper:
             self.db.run(sql, tuple(query.values()))
 
     def select(self, cls_type, **query) -> list:
-        match cls_type:
-            case _ if cls_type is User:
+        match cls_type.__name__:
+            case "User":
                 table = "Users"
-            case _ if cls_type is Quiz:
+            case "Quiz":
                 table = "Quizzes"
-            case _ if cls_type is Answer:
+            case "Answer":
                 table = "Answers"
-            case _ if cls_type is Question:
+            case "Question":
                 table = "Questions"
             case _:
                 raise TypeError("Unsupported type for select")
@@ -68,14 +71,14 @@ class DBWrapper:
             return result
 
     def modify(self, obj, **query) -> None:
-        match obj:
-            case User():
+        match obj.__class__.__name__:
+            case "User":
                 table = "Users"
-            case Quiz():
+            case "Quiz":
                 table = "Quizzes"
-            case Answer():
+            case "Answer":
                 table = "Answers"
-            case Question():
+            case "Question":
                 table = "Questions"
             case _:
                 raise TypeError("Unsupported object type for modify")
