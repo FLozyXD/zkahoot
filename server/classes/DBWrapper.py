@@ -23,8 +23,8 @@ class DBWrapper:
                 sql = "INSERT INTO Quizzes (creator_id, creation_date, deletion_date) VALUES (%s, %s, %s) RETURNING id"
             case "Answer":
                 sql = "INSERT INTO Answers (answer) VALUES (%s) RETURNING id"
-            case "Question":
-                sql = "INSERT INTO Questions (quiz_id, question, question_type, answer_id) VALUES (%s, %s, %s, %s) RETURNING id"
+            case "Question" | "TextQuestion":
+                sql = "INSERT INTO Questions (quiz_id, question, question_type, answer_id, type_dependent) VALUES (%s, %s, %s, %s, %s) RETURNING id"
             case _:
                 raise TypeError("Unsupported object type for insert")
         obj.id = self.db.one(sql, tuple(obj)[1:])
@@ -37,12 +37,12 @@ class DBWrapper:
                 table = "Quizzes"
             case "Answer":
                 table = "Answers"
-            case "Question":
+            case "Question" | "TextQuestion":
                 table = "Questions"
             case _:
                 raise TypeError("Unsupported type for delete")
         if not query:
-            raise ValueError(f"Attempted to delete ALL records from '{table}'. ")
+            raise ValueError(f"Attempted to delete ALL records from '{table}'")
         else:
             where_clause = " AND ".join([f"{key} = %s" for key in query.keys()])
             sql = f"DELETE FROM {table} WHERE {where_clause}"
@@ -56,7 +56,7 @@ class DBWrapper:
                 table = "Quizzes"
             case "Answer":
                 table = "Answers"
-            case "Question":
+            case "Question" | "TextQuestion":
                 table = "Questions"
             case _:
                 raise TypeError("Unsupported type for select")
@@ -78,12 +78,12 @@ class DBWrapper:
                 table = "Quizzes"
             case "Answer":
                 table = "Answers"
-            case "Question":
+            case "Question" | "TextQuestion":
                 table = "Questions"
             case _:
                 raise TypeError("Unsupported object type for modify")
         if not query:
-            raise ValueError(f"Attempted to update ALL records from '{table}'. ")
+            raise ValueError(f"Attempted to update ALL records from '{table}'")
         else:
             set_clause = ", ".join([f"{key} = %s" for key in query.keys()])
             sql = f"UPDATE {table} SET {set_clause} WHERE id = %s"
