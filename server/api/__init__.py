@@ -1,6 +1,6 @@
-from .auth import auth
+from .blueprints import auth
 
-from flask import Flask
+from flask import Flask, Blueprint
 from pathlib import Path
 import tomllib
 
@@ -14,7 +14,11 @@ def create_app(
     app = Flask(__name__)
     app.config.from_mapping(**config["general"]["flask_config"])
 
+    api = Blueprint("api", __name__, "/api")
+
     for bp in blueprints:
-        app.register_blueprint(bp)
+        api.register_blueprint(bp)
+
+    app.register_blueprint(api)
 
     return app

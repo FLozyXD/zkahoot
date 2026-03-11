@@ -1,21 +1,17 @@
-# если будет хрень, она здесь
+from ...classes import User
+from ...exceptions import UserNotExistsError, UserExistsError, LoginError
+from ...utils import UnifiedDict
 
-from ..classes import User
-from ..exceptions import UserExistsError, UserNotExistsError, LoginError
-from ..utils import UnifiedDict
-from flask import Blueprint, request, abort
 import secrets
-
-auth = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 
 class AuthManager:
     def __init__(self, login: str, password: str) -> None:
-        self.user = User(login, password)
+        self.user = User(None, login, password)
 
 
 class RegistrationManager(AuthManager):
-    def register(self) -> dict:
+    def register(self) -> tuple(dict, int):
         try:
             self.exists()
         except UserExistsError as e:
@@ -47,7 +43,7 @@ class TokenManager(AuthManager):
             if trg != src:
                 raise LoginError
 
-    def make_token(self) -> dict:
+    def make_token(self) -> tuple(dict, int):
         try:
             self.verify()
         except UserNotExistsError as e:
@@ -70,25 +66,3 @@ class TokenManager(AuthManager):
             token = secrets.token_hex()
             sessions[token] = self.user.login
             return {"status": "OK", "Token": token}, 200
-
-
-@auth.route("/register", methods=["POST"])
-def register() -> dict:
-    body = request.get_json()
-    try:
-        login, password = body["user"]["login"], body["user"]["password"]
-    except KeyError:
-        abort(400)
-    rm = RegistrationManager(login, password)
-    return rm.register()
-
-
-@auth.route("/get-token", methods=["POST"])
-def get_token() -> dict:
-    body = request.get_json()
-    try:
-        login, password = body["user"]["login"], body["user"]["password"]
-    except KeyError:
-        abort(400)
-    tm = TokenManager(login, password)
-    return tm.make_token()
