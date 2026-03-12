@@ -34,7 +34,7 @@ class RegistrationManager(AuthManager):
 
 class TokenManager(AuthManager):
     def verify(self) -> bool:
-        trg = User(self.login, self.password)
+        trg = User(None, self.login, self.password)
         try:
             src = User.from_database(login=self.login)
         except UserNotExistsError:
@@ -59,10 +59,10 @@ class TokenManager(AuthManager):
         else:
             sessions = UnifiedDict("sessions")
             active = [
-                item for item in sessions.items() if item[1] == self.user.login
+                item for item in sessions.items() if item[1] == self.user
             ]
             for key, _ in active:
                 del sessions[key]
             token = secrets.token_hex()
-            sessions[token] = self.user.login
+            sessions[token] = self.user
             return {"status": "OK", "Token": token}, 200
