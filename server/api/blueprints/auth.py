@@ -1,6 +1,4 @@
-# если будет хрень, она здесь
-
-from ..classes import TokenManager, RegistrationManager
+from api.classes import TokenManager, RegistrationManager
 from flask import Blueprint, request, abort
 
 auth = Blueprint("auth", __name__, url_prefix="/auth")

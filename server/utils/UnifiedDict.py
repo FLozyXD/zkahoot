@@ -1,9 +1,9 @@
 class UnifiedDict(dict):
     objects = {}
 
-    def __new__(cls, name: str):
+    def __new__(cls, *args, **kwargs):
         try:
-            cls.objects[name]
+            cls.objects[kwargs["name"]]
         except KeyError:
-            cls.objects[name] = super().__new__(cls)
-        return cls.objects[name]
+            cls.objects[kwargs["name"]] = super().__new__(cls)
+        return cls.objects[kwargs["name"]]

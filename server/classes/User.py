@@ -43,10 +43,7 @@ class User:
     def __eq__(self, other) -> bool:
         if not isinstance(other, User):
             return False
-        # FIXME: Since ID is a primary key, do we have to compare _every_ property?
-        return all(
-            getattr(self, s) == getattr(other, s) for s in User.__slots__
-        )
+        return self.login == other.login and self.password == other.password
 
     def to_database(self) -> None:
         db = DBWrapper()

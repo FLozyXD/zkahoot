@@ -1,6 +1,6 @@
-from ...classes import User
-from ...exceptions import UserNotExistsError, UserExistsError, LoginError
-from ...utils import UnifiedDict
+from classes.User import User
+from exceptions import UserNotExistsError, UserExistsError, LoginError
+from utils import UnifiedDict
 
 import secrets
 
@@ -16,16 +16,16 @@ class RegistrationManager(AuthManager):
             self.exists()
         except UserExistsError as e:
             return {
-                "status": "Forbidden",
-                "cause": f"User with login {e.login} already exists.",
+                "Status": "Forbidden",
+                "Cause": f"User with login {e.login} already exists.",
             }, 403
         else:
             self.user.to_database()
-            return {"status": "OK"}, 200
+            return {"Status": "OK"}, 200
 
     def exists(self) -> None:
         try:
-            User.from_database(login=self.login)
+            User.from_database(login=self.user.login)
         except UserNotExistsError:
             pass
         else:
@@ -34,13 +34,12 @@ class RegistrationManager(AuthManager):
 
 class TokenManager(AuthManager):
     def verify(self) -> bool:
-        trg = User(None, self.login, self.password)
         try:
-            src = User.from_database(login=self.login)
+            src = User.from_database(login=self.user.login)
         except UserNotExistsError:
             raise
         else:
-            if trg != src:
+            if self.user != src:
                 raise LoginError
 
     def make_token(self) -> tuple(dict, int):
@@ -48,16 +47,16 @@ class TokenManager(AuthManager):
             self.verify()
         except UserNotExistsError as e:
             return {
-                "status": "Forbidden",
-                "cause": f"User with login {e.login} does not exist.",
+                "Status": "Forbidden",
+                "Cause": f"User with login {e.login} does not exist.",
             }, 403
         except LoginError:
             return {
-                "status": "Forbidden",
-                "cause": "Invalid credentials.",
+                "Status": "Forbidden",
+                "Cause": "Invalid credentials.",
             }, 403
         else:
-            sessions = UnifiedDict("sessions")
+            sessions = UnifiedDict(name="sessions")
             active = [
                 item for item in sessions.items() if item[1] == self.user
             ]
@@ -65,4 +64,4 @@ class TokenManager(AuthManager):
                 del sessions[key]
             token = secrets.token_hex()
             sessions[token] = self.user
-            return {"status": "OK", "Token": token}, 200
+            return {"Status": "OK", "Token": token}, 200

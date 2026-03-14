@@ -2,7 +2,8 @@ class UserError(Exception):
     message = 'A problem with user "{login}" occured!'
 
     def __init__(self, login: str) -> None:
-        super().__init__(self.message.format(login=login))
+        self.login = login
+        super().__init__(self.message.format(login=self.login))
 
 
 class UserExistsError(UserError):
