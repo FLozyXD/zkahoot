@@ -16,12 +16,12 @@ class RegistrationManager(AuthManager):
             self.exists()
         except UserExistsError as e:
             return {
-                "Status": "Forbidden",
-                "Cause": f"User with login {e.login} already exists.",
+                "status": "Forbidden",
+                "cause": f"User with login {e.login} already exists.",
             }, 403
         else:
             self.user.to_database()
-            return {"Status": "OK"}, 200
+            return {"status": "OK"}, 200
 
     def exists(self) -> None:
         try:
@@ -47,13 +47,13 @@ class TokenManager(AuthManager):
             self.verify()
         except UserNotExistsError as e:
             return {
-                "Status": "Forbidden",
-                "Cause": f"User with login {e.login} does not exist.",
+                "status": "Forbidden",
+                "cause": f"User with login {e.login} does not exist.",
             }, 403
         except LoginError:
             return {
-                "Status": "Forbidden",
-                "Cause": "Invalid credentials.",
+                "status": "Forbidden",
+                "cause": "Invalid credentials.",
             }, 403
         else:
             sessions = UnifiedDict(name="sessions")
@@ -64,4 +64,4 @@ class TokenManager(AuthManager):
                 del sessions[key]
             token = secrets.token_hex()
             sessions[token] = self.user
-            return {"Status": "OK", "Token": token}, 200
+            return {"status": "OK", "token": token}, 200

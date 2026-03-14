@@ -14,7 +14,7 @@ def create_app(
     app = Flask(__name__)
     app.config.from_mapping(**config["general"]["flask_config"])
 
-    api = Blueprint("api", __name__, "/api")
+    api = Blueprint("api", __name__, url_prefix="/api")
 
     for bp in blueprints:
         api.register_blueprint(bp)
