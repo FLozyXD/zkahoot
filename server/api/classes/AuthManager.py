@@ -63,5 +63,7 @@ class TokenManager(AuthManager):
             for key, _ in active:
                 del sessions[key]
             token = secrets.token_hex()
-            sessions[token] = self.user
+            sessions[token] = User.from_database(
+                login=self.user.login, password_hash=self.user.password
+            )
             return {"status": "OK", "token": token}, 200
