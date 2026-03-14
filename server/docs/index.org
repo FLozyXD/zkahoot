@@ -1,0 +1,64 @@
+* API
+
+Ниже приведена документация endpoint'ов, их методов.
+
+** Endpoints
+
+*** auth
+
++ ~/api/auth/register~
+  Методы: ~POST~
+  Принимает:
+  #+begin_src json
+    {
+      "user": {
+        "login": "{login}",
+        "password": "{password}"
+      }
+    }
+#+end_src
+  Выдает:
+  #+begin_src json
+    "200"
+    {
+      "status": "OK"
+    }
+
+    "403"
+    {
+      "status": "Forbidden",
+      "cause": "User with login {login} already exists."
+    }
+#+end_src
+
++ ~/api/auth/get-token~
+  Методы: ~POST~
+  Принимает:
+    #+begin_src json
+    {
+      "user": {
+        "login": "{login}",
+        "password": "{password}"
+      }
+    }
+#+end_src
+  Выдает:
+  #+begin_src json
+    "200"
+    {
+      "status": "OK",
+      "token": "{token}"
+    }
+
+    "403"
+    {
+      "status": "Forbidden",
+      "cause": "Invalid credentials."
+    }
+
+    "403"
+    {
+      "status": "Forbidden",
+      "cause": "User with login {login} does not exist."
+    }
+#+end_src
