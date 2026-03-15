@@ -13,16 +13,16 @@
 + ~/api/auth/register~
   - Методы: ~POST~
   - Принимает:
-     #+begin_src json
+    #+begin_src json
     {
       "user": {
         "login": "{login}",
         "password": "{password}"
       }
     }
-#+end_src
+    #+end_src
   - Выдает:
-  #+begin_src json
+    #+begin_src json
     "200"
     {
       "status": "OK"
@@ -33,8 +33,7 @@
       "status": "Forbidden",
       "cause": "User with login {login} already exists."
     }
-
-#+end_src
+    #+end_src
 
 + ~/api/auth/get-token~
   - Методы: ~POST~
@@ -46,9 +45,9 @@
         "password": "{password}"
       }
     }
-#+end_src
+    #+end_src
   - Выдает:
-  #+begin_src json
+    #+begin_src json
     "200"
     {
       "status": "OK",
@@ -66,4 +65,4 @@
       "status": "Forbidden",
       "cause": "User with login {login} does not exist."
     }
-#+end_src
+    #+end_src
