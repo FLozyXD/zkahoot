@@ -11,9 +11,9 @@
 *** auth
 
 + ~/api/auth/register~
-  Методы: ~POST~
-  Принимает:
-  #+begin_src json
+  - Методы: ~POST~
+  - Принимает:
+     #+begin_src json
     {
       "user": {
         "login": "{login}",
@@ -21,7 +21,7 @@
       }
     }
 #+end_src
-  Выдает:
+  - Выдает:
   #+begin_src json
     "200"
     {
@@ -36,8 +36,8 @@
 #+end_src
 
 + ~/api/auth/get-token~
-  Методы: ~POST~
-  Принимает:
+  - Методы: ~POST~
+  - Принимает:
     #+begin_src json
     {
       "user": {
@@ -46,7 +46,7 @@
       }
     }
 #+end_src
-  Выдает:
+  - Выдает:
   #+begin_src json
     "200"
     {
