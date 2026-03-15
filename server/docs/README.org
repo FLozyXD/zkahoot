@@ -33,6 +33,7 @@
       "status": "Forbidden",
       "cause": "User with login {login} already exists."
     }
+
 #+end_src
 
 + ~/api/auth/get-token~
