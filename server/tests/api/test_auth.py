@@ -1,5 +1,5 @@
-from api import create_app
-from classes.DBWrapper import DBWrapper
+from src.api import create_app
+from src.classes.DBWrapper import DBWrapper
 import unittest
 
 

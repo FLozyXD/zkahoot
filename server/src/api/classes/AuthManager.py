@@ -1,6 +1,6 @@
-from classes.User import User
-from exceptions import UserNotExistsError, UserExistsError, LoginError
-from utils import UnifiedDict
+from src.classes.User import User
+from src.exceptions import UserNotExistsError, UserExistsError, LoginError
+from src.utils import UnifiedDict
 
 import secrets
 

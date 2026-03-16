@@ -1,5 +1,5 @@
-from api.classes import TokenManager, RegistrationManager
-from utils import UnifiedDict
+from src.api.classes import TokenManager, RegistrationManager
+from src.utils import UnifiedDict
 from flask import Blueprint, request, abort, g
 
 auth = Blueprint("auth", __name__, url_prefix="/auth")

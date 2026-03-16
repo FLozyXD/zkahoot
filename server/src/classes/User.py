@@ -1,7 +1,7 @@
 import hashlib
 
-from exceptions import UserNotExistsError
-from classes.DBWrapper import DBWrapper
+from src.exceptions import UserNotExistsError
+from src.classes.DBWrapper import DBWrapper
 from typing import Optional
 
 

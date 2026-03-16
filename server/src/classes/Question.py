@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from classes.DBWrapper import DBWrapper
-from classes.Answer import AbstractAnswer, Answer
+from src.classes.DBWrapper import DBWrapper
+from src.classes.Answer import Answer
 
 
 class AbstractQuestion(ABC):
@@ -89,7 +89,12 @@ class TextQuestion(AbstractQuestion):
         question = db.select(TextQuestion, **query)[0]
         answer = Answer.from_database(question["answer_id"])
         return TextQuestion(
-            question[0], question[1], question[2], question[3], answer, question[4]
+            question[0],
+            question[1],
+            question[2],
+            question[3],
+            answer,
+            question[4],
         )
 
     def to_json(self) -> dict:
