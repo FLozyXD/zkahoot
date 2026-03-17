@@ -100,10 +100,10 @@ def compare() -> tuple[dict, int]:
     user_quiz_ud = UnifiedDict(name="user_quiz")
     user = g.user
     try:
-        lobby = user_quiz_ud[user.login]
+        quiz = user_quiz_ud[user.login]
     except KeyError:
         abort(404)
     else:
-        compared = lobby.check(answers)
+        compared = quiz.check(answers)
         del user_quiz_ud[user.login]
     return {"answers": compared}, 200
