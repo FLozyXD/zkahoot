@@ -8,61 +8,106 @@
 
 ** Endpoints
 
+*** lobby
+
+В этом разлеле необходима авторизация пользователя.
+
++ ~/api/lobby/search~
+  - Методы: ~GET~
+  - Принимает:
+    * q - параметр ссылки. Строка, которая является частью названия квиза, что сейчас в лобби.
+
++ ~/api/lobby/create~
+  - Методы: ~POST~
+  - Принимает:
+    #+begin_src json
+      {
+        "quiz_id": {integer}
+      }
+    #+end_src
+
++ ~/api/lobby/join/<token>~
+  - Методы: ~POST~
+  - Принимает:
+    * <token> - это токен/идентификатор лобби
+
++ ~/api/lobby/exit/<token>~
+  - Методы: ~POST~
+  - Принимает:
+    * <token> - это токен/идентификатор лобби
+
++ ~/api/lobby/run/<token>~
+  - Методы: ~POST~
+  - Принимает:
+    * <token> - это токен/идентификатор лобби
+  - Комментарий: это метод, который запускает игру. Запустить игру может ЛИШЬ ТОЛЬКО обладатель лобби.
+
++ ~/api/lobby/compare~
+  - Методы: ~POST~
+  - Принимает:
+    #+begin_src json
+      {
+        "answers": [
+          "answer1",
+          "answer2",
+          "answer3",
+          ...
+        ]
+      }
+    #+end_src
+  - Комментарий: это метод сверки ответов. Пользователь и квиз после запуска лобби уже связаны.
+
 *** auth
 
 + ~/api/auth/register~
   - Методы: ~POST~
   - Принимает:
     #+begin_src json
-    {
-      "user": {
+      {
         "login": "{login}",
         "password": "{password}"
       }
-    }
     #+end_src
   - Выдает:
     #+begin_src json
-    "200"
-    {
-      "status": "OK"
-    }
+      "200"
+      {
+        "status": "OK"
+      }
 
-    "403"
-    {
-      "status": "Forbidden",
-      "cause": "User with login {login} already exists."
-    }
+      "403"
+      {
+        "status": "Forbidden",
+        "cause": "User with login {login} already exists."
+      }
     #+end_src
 
 + ~/api/auth/get-token~
   - Методы: ~POST~
   - Принимает:
     #+begin_src json
-    {
-      "user": {
+      {
         "login": "{login}",
         "password": "{password}"
       }
-    }
     #+end_src
   - Выдает:
     #+begin_src json
-    "200"
-    {
-      "status": "OK",
-      "token": "{token}"
-    }
+      "200"
+      {
+        "status": "OK",
+        "token": "{token}"
+      }
 
-    "403"
-    {
-      "status": "Forbidden",
-      "cause": "Invalid credentials."
-    }
+      "403"
+      {
+        "status": "Forbidden",
+        "cause": "Invalid credentials."
+      }
 
-    "403"
-    {
-      "status": "Forbidden",
-      "cause": "User with login {login} does not exist."
-    }
+      "403"
+      {
+        "status": "Forbidden",
+        "cause": "User with login {login} does not exist."
+      }
     #+end_src
