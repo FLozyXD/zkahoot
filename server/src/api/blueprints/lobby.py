@@ -7,7 +7,7 @@ from src.api.blueprints.auth import require_token
 from flask import Blueprint, request, abort, g
 import secrets
 
-lobby_bp = Blueprint("lobby", __name__, "/lobby")
+lobby_bp = Blueprint("lobby", __name__, url_prefix="/lobby")
 lobby_bp.before_request(require_token)
 
 
@@ -100,7 +100,10 @@ def compare() -> tuple[dict, int]:
     user_quiz_ud = UnifiedDict(name="user_quiz")
     user = g.user
     try:
-        compared = user_quiz_ud[user.login].check(answers)
+        lobby = user_quiz_ud[user.login]
     except KeyError:
         abort(404)
+    else:
+        compared = lobby.check(answers)
+        del user_quiz_ud[user.login]
     return {"answers": compared}, 200
