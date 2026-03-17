@@ -1,4 +1,4 @@
-from .blueprints import auth_bp
+from .blueprints import auth_bp, lobby_bp
 
 from flask import Flask, Blueprint
 from pathlib import Path
@@ -6,7 +6,7 @@ import tomllib
 
 
 def create_app(
-    config_path: Path = Path("config.toml"), blueprints=[auth_bp]
+    config_path: Path = Path("config.toml"), blueprints=[auth_bp, lobby_bp]
 ) -> Flask:
     with open(config_path, "rb") as file:
         config = tomllib.load(file)
