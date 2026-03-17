@@ -9,7 +9,7 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 def register() -> dict:
     body = request.get_json()
     try:
-        login, password = body["user"]["login"], body["user"]["password"]
+        login, password = body["login"], body["password"]
     except KeyError:
         abort(400)
     rm = RegistrationManager(login, password)
@@ -20,7 +20,7 @@ def register() -> dict:
 def get_token() -> dict:
     body = request.get_json()
     try:
-        login, password = body["user"]["login"], body["user"]["password"]
+        login, password = body["login"], body["password"]
     except KeyError:
         abort(400)
     tm = TokenManager(login, password)
