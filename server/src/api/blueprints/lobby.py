@@ -99,4 +99,8 @@ def compare() -> tuple[dict, int]:
         abort(400)
     user_quiz_ud = UnifiedDict(name="user_quiz")
     user = g.user
-    return user_quiz_ud[user.login].check(answers), 200
+    try:
+        compared = user_quiz_ud[user.login].check(answers)
+    except KeyError:
+        abort(404)
+    return compared, 200
