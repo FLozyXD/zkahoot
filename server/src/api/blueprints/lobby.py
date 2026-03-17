@@ -41,7 +41,7 @@ def create() -> tuple[dict, int]:
     lobby = Lobby(g.user.id, [g.user], quiz)
     token = secrets.token_hex()
     lobby_ud[token] = lobby
-    return token, 200
+    return {"token": token}, 200
 
 
 @lobby_bp.route("/join/<token>", methods=["POST"])
@@ -103,4 +103,4 @@ def compare() -> tuple[dict, int]:
         compared = user_quiz_ud[user.login].check(answers)
     except KeyError:
         abort(404)
-    return compared, 200
+    return {"answers": compared}, 200

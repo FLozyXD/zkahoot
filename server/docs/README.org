@@ -16,6 +16,12 @@
   - Методы: ~GET~
   - Принимает:
     * q - параметр ссылки. Строка, которая является частью названия квиза, что сейчас в лобби.
+  - Выдает:
+    #+begin_src json
+      {
+        "{token}": "{lobby json scheme}"
+      }
+    #+end_src
 
 + ~/api/lobby/create~
   - Методы: ~POST~
@@ -23,6 +29,12 @@
     #+begin_src json
       {
         "quiz_id": {integer}
+      }
+    #+end_src
+  - Выдает:
+    #+begin_src json
+      {
+        "token": "{token}"
       }
     #+end_src
 
@@ -53,6 +65,12 @@
           "answer3",
           ...
         ]
+      }
+    #+end_src
+  - Выдает:
+    #+begin_src json
+      {
+        "answers": "{True/False list}"
       }
     #+end_src
   - Комментарий: это метод сверки ответов. Пользователь и квиз после запуска лобби уже связаны.
