@@ -1,4 +1,4 @@
-from .blueprints import auth
+from .blueprints import auth_bp, lobby_bp
 
 from flask import Flask, Blueprint
 from pathlib import Path
@@ -6,7 +6,7 @@ import tomllib
 
 
 def create_app(
-    config_path: Path = Path("config.toml"), blueprints=[auth]
+    config_path: Path = Path("config.toml"), blueprints=[auth_bp, lobby_bp]
 ) -> Flask:
     with open(config_path, "rb") as file:
         config = tomllib.load(file)
@@ -14,11 +14,11 @@ def create_app(
     app = Flask(__name__)
     app.config.from_mapping(**config["general"]["flask_config"])
 
-    api = Blueprint("api", __name__, url_prefix="/api")
+    api_bp = Blueprint("api", __name__, url_prefix="/api")
 
     for bp in blueprints:
-        api.register_blueprint(bp)
+        api_bp.register_blueprint(bp)
 
-    app.register_blueprint(api)
+    app.register_blueprint(api_bp)
 
     return app

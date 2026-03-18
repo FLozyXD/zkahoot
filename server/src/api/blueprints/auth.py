@@ -2,25 +2,25 @@ from src.api.classes import TokenManager, RegistrationManager
 from src.utils import UnifiedDict
 from flask import Blueprint, request, abort, g
 
-auth = Blueprint("auth", __name__, url_prefix="/auth")
+auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
-@auth.route("/register", methods=["POST"])
+@auth_bp.route("/register", methods=["POST"])
 def register() -> dict:
     body = request.get_json()
     try:
-        login, password = body["user"]["login"], body["user"]["password"]
+        login, password = body["login"], body["password"]
     except KeyError:
         abort(400)
     rm = RegistrationManager(login, password)
     return rm.register()
 
 
-@auth.route("/get-token", methods=["POST"])
+@auth_bp.route("/get-token", methods=["POST"])
 def get_token() -> dict:
     body = request.get_json()
     try:
-        login, password = body["user"]["login"], body["user"]["password"]
+        login, password = body["login"], body["password"]
     except KeyError:
         abort(400)
     tm = TokenManager(login, password)
@@ -39,4 +39,4 @@ def require_token() -> None:
         token = request.headers["Authorization"]
         g.user = sessions[token]
     except KeyError:
-        abort(403)
+        abort(401)
