@@ -7,13 +7,14 @@ import secrets
 class Lobby:
     def __init__(
         self,
-        token: str | None = secrets.token_hex(),
+        token: str | None = None,
         name: str | None = None,
         owner_id: int | None = None,
         users: list[User] = [],
         quiz: Quiz = None,
     ) -> None:
-        self.token = token
+        if token is None:
+            self.token = secrets.token_hex()
         if name is None:
             self.name = self.token
         self.owner_id = owner_id

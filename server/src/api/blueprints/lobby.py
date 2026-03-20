@@ -14,15 +14,18 @@ lobby_bp.before_request(require_token)
 @lobby_bp.route("/create", methods=["POST"])
 def create() -> tuple[dict, int]:
     body = request.get_json()
-    quiz = Quiz.from_database(id=body["quiz_id"])
-    lobby = Lobby(
-        name=body["name"], owner_id=g.user.id, users=[g.user], quiz=quiz
-    )
     lobby_ud = UnifiedDict(name="lobby")
     user_lobby_ud = UnifiedDict(name="user_lobby")
-    lobby_ud[lobby.token] = lobby
-    user_lobby_ud[g.user.login] = lobby
-    return {"token": lobby.token}
+    if user_lobby_ud.get(g.user.login) is None:
+        quiz = Quiz.from_database(id=body["quiz_id"])
+        lobby = Lobby(
+            name=body["name"], owner_id=g.user.id, users=[g.user], quiz=quiz
+        )
+        lobby_ud[lobby.token] = lobby
+        user_lobby_ud[g.user.login] = lobby
+        return {"token": lobby.token}
+    else:
+        abort(403)
 
 
 @lobby_bp.route("/join/<token>", methods=["POST"])
