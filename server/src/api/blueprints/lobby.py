@@ -5,88 +5,74 @@ from src.classes.Answer import Answer
 from src.api.blueprints.auth import require_token
 
 from flask import Blueprint, request, abort, g
-import secrets
 
 lobby_bp = Blueprint("lobby", __name__, url_prefix="/lobby")
 lobby_bp.before_request(require_token)
 
 
-@lobby_bp.route("/search", methods=["GET"])
-def search() -> tuple[dict, int]:
-    lobby_ud = UnifiedDict(name="lobbies")
-    try:
-        q = request.args["q"]
-    except KeyError:
-        q = ""
-    lobbies = [
-        (lobby[0], lobby[1].to_json())
-        for lobby in lobby_ud.items()
-        if q in lobby_bp[1].quiz.quiz_name
-    ]
-    return dict(lobbies), 200
-
-
 @lobby_bp.route("/create", methods=["POST"])
 def create() -> tuple[dict, int]:
-    lobby_ud = UnifiedDict(name="lobbies")
     body = request.get_json()
-    try:
-        quiz_id = body["quiz_id"]
-    except KeyError:
-        abort(400)
-    try:
-        quiz = Quiz.from_database(id=quiz_id)
-    except IndexError:
-        abort(404)
-    lobby = Lobby(g.user.id, [g.user], quiz)
-    token = secrets.token_hex()
-    lobby_ud[token] = lobby
-    return {"token": token}, 200
+    quiz = Quiz.from_database(id=body["quiz_id"])
+    lobby = Lobby(
+        name=body["name"], owner_id=g.user.id, users=[g.user], quiz=quiz
+    )
+    lobby_ud = UnifiedDict(name="lobby")
+    user_lobby_ud = UnifiedDict(name="user_lobby")
+    lobby_ud[lobby.token] = lobby
+    user_lobby_ud[g.user.login] = lobby
+    return {"token": lobby.token}
 
 
 @lobby_bp.route("/join/<token>", methods=["POST"])
 def join(token: str) -> tuple[str, int]:
-    lobby_ud = UnifiedDict(name="lobbies")
+    lobby_ud = UnifiedDict(name="lobby")
+    user_lobby_ud = UnifiedDict(name="user_lobby")
     try:
         lobby = lobby_ud[token]
     except KeyError:
         abort(404)
     lobby.join(g.user)
+    user_lobby_ud[g.user.login] = lobby
     return "", 200
 
 
-@lobby_bp.route("/exit/<token>", methods=["POST"])
-def exit(token: str) -> tuple[str, int]:
-    lobby_ud = UnifiedDict(name="lobbies")
+@lobby_bp.route("/get-info", methods=["GET"])
+def get_quiz() -> tuple[dict, int]:
+    user_lobby_ud = UnifiedDict(name="user_lobby")
     try:
-        lobby = lobby_ud[token]
+        lobby = user_lobby_ud[g.user.login]
+    except KeyError:
+        abort(404)
+    return lobby.to_json(), 200
+
+
+@lobby_bp.route("/exit", methods=["POST"])
+def exit() -> tuple[str, int]:
+    user_lobby_ud = UnifiedDict(name="user_lobby")
+    try:
+        lobby = user_lobby_ud[g.user.login]
     except KeyError:
         abort(404)
     try:
         lobby.kick(g.user)
     except ValueError:
         abort(404)
-    else:
-        if not lobby.users:
-            del lobby[token]
+    del user_lobby_ud[g.user.login]
     return "", 200
 
 
-@lobby_bp.route("/run/<token>", methods=["POST"])
-def run(token: str) -> tuple[str, int]:
-    lobby_ud = UnifiedDict(name="lobbies")
-    user_quiz_ud = UnifiedDict(name="user_quiz")
-    user = g.user
+@lobby_bp.route("/run", methods=["POST"])
+def run() -> tuple[str, int]:
+    user_lobby_ud = UnifiedDict(name="user_lobby")
     try:
-        lobby = lobby_ud[token]
+        lobby = user_lobby_ud[g.user.login]
     except KeyError:
         abort(404)
-    if lobby.owner_id == user.id:
+    if g.user.id == lobby.owner_id:
         lobby.run()
-        for u in lobby.users:
-            user_quiz_ud[u.login] = lobby.quiz
     else:
-        abort(401)
+        abort(403)
     return "", 200
 
 
@@ -94,16 +80,21 @@ def run(token: str) -> tuple[str, int]:
 def compare() -> tuple[dict, int]:
     body = request.get_json()
     try:
-        answers = [Answer(None, answer) for answer in body["answers"]]
+        answers = [Answer(None, a) for a in body["answers"]]
     except KeyError:
         abort(400)
-    user_quiz_ud = UnifiedDict(name="user_quiz")
-    user = g.user
+    user_lobby_ud = UnifiedDict(name="user_lobby")
+    lobby = user_lobby_ud[g.user.login]
+    return lobby.check(answers), 200
+
+
+@lobby_bp.route("/search", methods=["GET"])
+def search() -> tuple[dict, int]:
     try:
-        quiz = user_quiz_ud[user.login]
+        query = request.args["q"]
     except KeyError:
-        abort(404)
-    else:
-        compared = quiz.check(answers)
-        del user_quiz_ud[user.login]
-    return {"answers": compared}, 200
+        abort(400)
+    lobby_ud = UnifiedDict("lobby")
+    return [
+        lobby.to_json() for lobby in lobby_ud.items() if query in lobby.name
+    ], 200

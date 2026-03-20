@@ -1,16 +1,21 @@
 from src.classes.Quiz import Quiz
 from src.classes.User import User
 from src.classes.Answer import Answer
-from secrets import token_hex
+import secrets
 
 
 class Lobby:
     def __init__(
         self,
+        token: str | None = secrets.token_hex(),
+        name: str | None = None,
         owner_id: int | None = None,
         users: list[User] = [],
         quiz: Quiz = None,
     ) -> None:
+        self.token = token
+        if name is None:
+            self.name = self.token
         self.owner_id = owner_id
         self.users = users
         self.quiz = quiz
@@ -35,15 +40,21 @@ class Lobby:
 
     def to_json(self) -> dict:
         return {
+            "token": self.token,
+            "name": self.name,
             "owner_id": self.owner_id,
-            "users": [p.to_json() for p in self.users],
+            "users": [p.to_json()["login"] for p in self.users],
             "quiz": self.quiz.to_json(),
         }
 
     @staticmethod
     def from_json(lobby: dict):
         return Lobby(
+            token=lobby["token"],
+            name=lobby["name"],
             quiz=Quiz.from_json(lobby["quiz"]),
-            users=[User.from_json(p) for p in lobby["users"]],
+            users=[
+                User.from_database(login=p["login"]) for p in lobby["users"]
+            ],
             owner_id=lobby["owner_id"],
         )
