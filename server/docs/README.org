@@ -20,10 +20,10 @@
     #+begin_src json
       [
         {
-          "hi": "{lobby scheme}"
+          "{lobby scheme}"
         },
         {
-          "hi": "{lobby scheme}"
+          "{lobby scheme}"
         }
       ]
     #+end_src
