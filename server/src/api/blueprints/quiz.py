@@ -5,7 +5,6 @@ from src.classes.DBWrapper import DBWrapper
 from src.api.blueprints.auth import require_token
 
 from flask import Blueprint, request, abort, g
-import secrets
 
 quiz_bp = Blueprint("quiz", __name__, url_prefix="/quiz")
 quiz_bp.before_request(require_token)
@@ -70,5 +69,5 @@ def search() -> tuple[list[Quiz], int]:
             TextQuestion.from_tuple(q)
             for q in db.select(TextQuestion, quiz_id=part[0])
         ]
-        quizes.append(Quiz(result[0], result[1], result[2], questions=questions))
+        quizes.append(Quiz(part[0], part[1], part[2], questions=questions))
     return quizes, 200
