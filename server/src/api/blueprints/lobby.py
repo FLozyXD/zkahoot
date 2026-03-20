@@ -92,7 +92,11 @@ def compare() -> tuple[dict, int]:
         abort(400)
     user_lobby_ud = UnifiedDict(name="user_lobby")
     lobby = user_lobby_ud[g.user.login]
-    return lobby.check(answers), 200
+    try:
+        compared = lobby.check(answers)
+    except ValueError:
+        abort(403)
+    return compared, 200
 
 
 @lobby_bp.route("/poll-running/<token>", methods=["GET"])

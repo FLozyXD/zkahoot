@@ -37,7 +37,9 @@ class Lobby:
         self.running = True
 
     def check(self, answers: list[Answer]) -> list[bool]:
-        return self.quiz.check(answers)
+        if self.running:
+            return self.quiz.check(answers)
+        raise ValueError
 
     def to_json(self) -> dict:
         return {
