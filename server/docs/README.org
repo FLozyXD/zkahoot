@@ -18,9 +18,14 @@
     * q - параметр ссылки. Строка, которая является частью названия квиза, что сейчас в лобби.
   - Выдает:
     #+begin_src json
-      {
-        "{token}": "{lobby json scheme}"
-      }
+      [
+        {
+          "hi": "{lobby scheme}"
+        },
+        {
+          "hi": "{lobby scheme}"
+        }
+      ]
     #+end_src
 
 + ~/api/lobby/create~
@@ -28,6 +33,7 @@
   - Принимает:
     #+begin_src json
       {
+        "name": "{lobby name}",
         "quiz_id": {integer}
       }
     #+end_src
@@ -43,16 +49,31 @@
   - Принимает:
     * <token> - это токен/идентификатор лобби
 
-+ ~/api/lobby/exit/<token>~
++ ~/api/lobby/exit~
   - Методы: ~POST~
   - Принимает:
     * <token> - это токен/идентификатор лобби
 
-+ ~/api/lobby/run/<token>~
++ ~/api/lobby/run~
   - Методы: ~POST~
   - Принимает:
     * <token> - это токен/идентификатор лобби
   - Комментарий: это метод, который запускает игру. Запустить игру может ЛИШЬ ТОЛЬКО обладатель лобби.
+
++ ~/api/lobby/get-info~
+  - Методы: ~GET~
+  - Выдает:
+    #+begin_src json
+      {
+        "{lobby scheme}"
+      }
+    #+end_src
+
++ ~/api/lobby/poll-running/<token>~
+  - Методы: ~GET~
+  - Принимает:
+    * <token> - это токен/идентификатор лобби
+  - Комментарий: вернет пустой ответ с кодом 200, когда запуск все же состоится.
 
 + ~/api/lobby/compare~
   - Методы: ~POST~

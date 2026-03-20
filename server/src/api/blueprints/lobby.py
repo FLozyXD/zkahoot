@@ -5,6 +5,7 @@ from src.classes.Answer import Answer
 from src.api.blueprints.auth import require_token
 
 from flask import Blueprint, request, abort, g
+from time import sleep
 
 lobby_bp = Blueprint("lobby", __name__, url_prefix="/lobby")
 lobby_bp.before_request(require_token)
@@ -38,7 +39,7 @@ def join(token: str) -> tuple[str, int]:
 
 
 @lobby_bp.route("/get-info", methods=["GET"])
-def get_quiz() -> tuple[dict, int]:
+def get_info() -> tuple[dict, int]:
     user_lobby_ud = UnifiedDict(name="user_lobby")
     try:
         lobby = user_lobby_ud[g.user.login]
@@ -50,6 +51,7 @@ def get_quiz() -> tuple[dict, int]:
 @lobby_bp.route("/exit", methods=["POST"])
 def exit() -> tuple[str, int]:
     user_lobby_ud = UnifiedDict(name="user_lobby")
+    lobby_ud = UnifiedDict(name="lobby")
     try:
         lobby = user_lobby_ud[g.user.login]
     except KeyError:
@@ -59,6 +61,8 @@ def exit() -> tuple[str, int]:
     except ValueError:
         abort(404)
     del user_lobby_ud[g.user.login]
+    if not lobby.users:
+        del lobby_ud[lobby.token]
     return "", 200
 
 
@@ -86,6 +90,19 @@ def compare() -> tuple[dict, int]:
     user_lobby_ud = UnifiedDict(name="user_lobby")
     lobby = user_lobby_ud[g.user.login]
     return lobby.check(answers), 200
+
+
+@lobby_bp.route("/poll-running/<token>", methods=["GET"])
+def poll_running(token: str) -> tuple[str, int]:
+    lobby_ud = UnifiedDict(name="lobby")
+    try:
+        lobby = lobby_ud[token]
+    except KeyError:
+        abort(404)
+    while True:
+        if lobby.running:
+            return "", 200
+        sleep(3)
 
 
 @lobby_bp.route("/search", methods=["GET"])
