@@ -12,25 +12,31 @@ class AuthManager:
 
 
 class RegistrationManager(AuthManager):
-    def register(self) -> tuple[dict, int]:
-        try:
-            self.exists()
-        except UserExistsError as e:
-            return {
-                "status": "Forbidden",
-                "cause": f"User with login {e.login} already exists.",
-            }, 403
-        else:
-            self.user.to_database()
-            return {"status": "OK"}, 200
-
-    def exists(self) -> None:
+    def validate(self) -> None:
         try:
             User.from_database(login=self.user.login)
         except UserNotExistsError:
             pass
         else:
             raise UserExistsError(self.user.login)
+
+    def verify(self) -> tuple[dict, int] | None:
+        try:
+            self.validate()
+        except UserExistsError as e:
+            return {
+                "status": "Forbidden",
+                "cause": f"User with login {e.login} already exists.",
+            }, 403
+        return None
+
+    def register(self) -> tuple[dict, int]:
+        response = self.verify()
+        if response is not None:
+            return response
+        else:
+            self.user.to_database()
+            return {"status": "OK"}, 200
 
 
 class TokenManager(AuthManager):
