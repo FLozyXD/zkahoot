@@ -46,7 +46,7 @@ def change() -> int:
     try:
         quiz_id = body["quiz_id"]
         quiz_name = body["quiz_name"]
-        questions = body.get("questions", [])
+        questions = body["questions"]
     except KeyError:
         abort(404)
     quiz = Quiz.from_database(id = quiz_id)
