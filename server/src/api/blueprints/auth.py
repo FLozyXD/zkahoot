@@ -1,4 +1,4 @@
-from src.api.classes import TokenManager, RegistrationManager
+from src.api.classes import TokenManager, RegistrationManager, ChangeCredentialsManager
 from src.utils import UnifiedDict
 from flask import Blueprint, request, abort, g
 
@@ -14,6 +14,32 @@ def register() -> dict:
         abort(400)
     rm = RegistrationManager(login, password)
     return rm.register()
+
+
+@auth_bp.route("/change_login", methods=["POST"])
+def change_login() -> dict:
+    body = request.get_json()
+    try:
+        login = body["login"]
+        password = body["password"]
+        new_login = body["new_login"]
+    except KeyError:
+        abort(400)
+    cm = ChangeCredentialsManager(login, password, new_login=new_login)
+    return cm.change_login()
+
+
+@auth_bp.route("/change_password", methods=["POST"])
+def change_password() -> dict:
+    body = request.get_json()
+    try:
+        login = body["login"]
+        password = body["password"]
+        new_password = body["new_password"]
+    except KeyError:
+        abort(400)
+    cm = ChangeCredentialsManager(login, password, new_password=new_password)
+    return cm.change_password()
 
 
 @auth_bp.route("/make-token", methods=["POST"])
