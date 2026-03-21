@@ -3,12 +3,41 @@ from src.exceptions import UserNotExistsError, UserExistsError, LoginError
 from src.utils import UnifiedDict
 
 from contextlib import suppress
+from abc import ABC, abstractmethod
 import secrets
 
 
-class AuthManager:
+class AuthManager(ABC):
     def __init__(self, login: str, password: str) -> None:
         self.user = User(None, login, password)
+
+    @abstractmethod
+    def validate(self) -> None: ...
+
+    @abstractmethod
+    def verify(self) -> tuple[dict, int] | None: ...
+
+
+class AccountManager(AuthManager):
+    def validate(self) -> None:
+        src = User.from_database(login=self.user.login)
+        if self.user != src:
+            raise LoginError
+
+    def verify(self) -> tuple[dict, int] | None:
+        try:
+            self.validate()
+        except UserNotExistsError as e:
+            return {
+                "status": "Forbidden",
+                "cause": f"User with login {e.login} does not exist.",
+            }, 403
+        except LoginError:
+            return {
+                "status": "Forbidden",
+                "cause": "Invalid credentials.",
+            }, 403
+        return None
 
 
 class RegistrationManager(AuthManager):
@@ -39,27 +68,7 @@ class RegistrationManager(AuthManager):
             return {"status": "OK"}, 200
 
 
-class TokenManager(AuthManager):
-    def validate(self) -> None:
-        src = User.from_database(login=self.user.login)
-        if self.user != src:
-            raise LoginError
-
-    def verify(self) -> tuple[dict, int] | None:
-        try:
-            self.validate()
-        except UserNotExistsError as e:
-            return {
-                "status": "Forbidden",
-                "cause": f"User with login {e.login} does not exist.",
-            }, 403
-        except LoginError:
-            return {
-                "status": "Forbidden",
-                "cause": "Invalid credentials.",
-            }, 403
-        return None
-
+class TokenManager(AccountManager):
     def make_token(self) -> tuple[dict, int]:
         response = self.verify()
         if response is not None:
