@@ -13,54 +13,50 @@ quiz_bp.before_request(require_token)
 def create() -> tuple[Quiz, int]:
     body = request.get_json()
     try:
-        questions = body["questions"]
+        json_quiz = body["new_quiz"]
     except KeyError:
-        abort(404)
-    try:
-        quiz_name = body["quiz_name"]
-    except KeyError:
-        abort(404)
-    quiz = Quiz(None, quiz_name, g.user.id, questions)
+        abort(400)
+    quiz = Quiz.from_json(json_quiz)
     quiz.to_database()
     return quiz, 200
 
-@quiz_bp.route("/delete", methods=["POST"])
+@quiz_bp.route("/delete", methods=["DELETE"])
 def delete() -> int:
     body = request.get_json()
     try:
         quiz_id = body["quiz_id"]
     except KeyError:
-        abort(404) 
+        abort(400) 
     db = DBWrapper() 
-    # начинается сомнительный движ
     quiz = Quiz.from_database(id = quiz_id)
     for question in quiz.questions:
-        db.delete(Answer, answer=question.answer.answer)
+        db.delete(Answer, id=question.answer.id)
         db.delete(TextQuestion, id=question.id)
     db.delete(Quiz, id=quiz_id)
     return 200
 
 @quiz_bp.route("/change", methods=["POST"])
 def change() -> int:
-    body = request.get_json()
+    changed_json = request.get_json()
     try:
-        quiz_id = body["quiz_id"]
-        quiz_name = body["quiz_name"]
-        questions = body["questions"]
-    except KeyError:
-        abort(404)
-    quiz = Quiz.from_database(id = quiz_id)
-    quiz.quiz_name = quiz_name
-    quiz.questions = questions
+        changed_quiz = Quiz.from_json(changed_json)
+    except:
+        abort(400)
+    old_quiz = Quiz.from_database(id=changed_quiz.id)
+    db = DBWrapper()
+    for question in old_quiz.questions:
+        db.delete(Answer, id=question.answer.id)
+        db.delete(TextQuestion, id=old_quiz.id)
+    db.delete(Quiz, id=old_quiz.id)
+    changed_quiz.to_database()
     return 200
 
 @quiz_bp.route("/search", methods=["GET"])
 def search() -> tuple[list[Quiz], int]:
-    body = request.get_json()
     try:
-        quiz_name = body["quiz_name"]
-    except KeyError:
-        abort(404)
+        quiz_name = request.args["quiz_name"]
+    except:
+        abort(400)
     quizes = []
     db = DBWrapper()
     result = db.select(Quiz, quiz_name = quiz_name)
