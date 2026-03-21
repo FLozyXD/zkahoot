@@ -10,7 +10,7 @@ quiz_bp = Blueprint("quiz", __name__, url_prefix="/quiz")
 quiz_bp.before_request(require_token)
 
 @quiz_bp.route("/create", methods=["POST"])
-def create() -> tuple[Quiz, int]:
+def create() -> tuple[dict, int]:
     body = request.get_json()
     try:
         quiz = Quiz.from_json(body)
@@ -56,7 +56,7 @@ def change() -> int:
     return "", 200
 
 @quiz_bp.route("/search", methods=["GET"])
-def search() -> tuple[list[Quiz], int]:
+def search() -> tuple[list[dict], int]:
     try:
         quiz_name = request.args["query"]
     except:
