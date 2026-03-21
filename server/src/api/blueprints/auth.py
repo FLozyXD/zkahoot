@@ -16,8 +16,9 @@ def register() -> dict:
     return rm.register()
 
 
+@auth_bp.route("/make-token", methods=["POST"])
 @auth_bp.route("/get-token", methods=["POST"])
-def get_token() -> dict:
+def make_token() -> dict:
     body = request.get_json()
     try:
         login, password = body["login"], body["password"]
@@ -27,6 +28,17 @@ def get_token() -> dict:
     return tm.make_token()
 
 
+@auth_bp.route("/revoke-token", methods=["POST"])
+def revoke_token() -> dict:
+    body = request.get_json()
+    try:
+        login, password = body["login"], body["password"]
+    except KeyError:
+        abort(400)
+    tm = TokenManager(login, password)
+    return tm.revoke_token()
+
+
 def require_token() -> None:
     """The function, needed to use with all the protected
     endpoints. Just call `blueprint.before_request(require_token)' and
@@ -34,9 +46,9 @@ def require_token() -> None:
     import `g' and do `user = g.user'. From this object you can get
     other information, such as id, login and password hash."""
 
-    sessions = UnifiedDict(name="sessions")
+    token_user_ud = UnifiedDict(name="token_user")
     try:
         token = request.headers["Authorization"]
-        g.user = sessions[token]
+        g.user = token_user_ud[token]
     except KeyError:
         abort(401)
