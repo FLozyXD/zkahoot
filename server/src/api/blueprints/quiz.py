@@ -13,51 +13,55 @@ quiz_bp.before_request(require_token)
 def create() -> tuple[Quiz, int]:
     body = request.get_json()
     try:
-        json_quiz = body["new_quiz"]
+        quiz = Quiz.from_json(body)
     except KeyError:
         abort(400)
-    quiz = Quiz.from_json(json_quiz)
     quiz.to_database()
-    return quiz, 200
+    jsoned_quiz = quiz.to_json()
+    return jsoned_quiz, 200
 
 @quiz_bp.route("/delete", methods=["DELETE"])
 def delete() -> int:
     body = request.get_json()
     try:
-        quiz_id = body["quiz_id"]
+        quiz_id = body["query"]
     except KeyError:
         abort(400) 
     db = DBWrapper() 
     quiz = Quiz.from_database(id = quiz_id)
+    if g.user.id != quiz.creator_id:
+        abort(403)
     for question in quiz.questions:
         db.delete(Answer, id=question.answer.id)
         db.delete(TextQuestion, id=question.id)
     db.delete(Quiz, id=quiz_id)
-    return 200
+    return "", 200
 
 @quiz_bp.route("/change", methods=["POST"])
 def change() -> int:
-    changed_json = request.get_json()
+    body = request.get_json()
     try:
-        changed_quiz = Quiz.from_json(changed_json)
+        changed_quiz = Quiz.from_json(body)
     except:
         abort(400)
     old_quiz = Quiz.from_database(id=changed_quiz.id)
+    if g.user.id != old_quiz.creator_id:
+        abort(403)
     db = DBWrapper()
     for question in old_quiz.questions:
         db.delete(Answer, id=question.answer.id)
         db.delete(TextQuestion, id=old_quiz.id)
     db.delete(Quiz, id=old_quiz.id)
     changed_quiz.to_database()
-    return 200
+    return "", 200
 
 @quiz_bp.route("/search", methods=["GET"])
 def search() -> tuple[list[Quiz], int]:
     try:
-        quiz_name = request.args["quiz_name"]
+        quiz_name = request.args["query"]
     except:
         abort(400)
-    quizes = []
+    quizzes = []
     db = DBWrapper()
     result = db.select(Quiz, quiz_name = quiz_name)
     for part in result:
@@ -65,5 +69,5 @@ def search() -> tuple[list[Quiz], int]:
             TextQuestion.from_tuple(q)
             for q in db.select(TextQuestion, quiz_id=part[0])
         ]
-        quizes.append(Quiz(part[0], part[1], part[2], questions=questions))
-    return quizes, 200
+        quizzes.append(Quiz(part[0], part[1], part[2], questions=questions).to_json())
+    return quizzes, 200
