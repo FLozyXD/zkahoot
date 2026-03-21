@@ -34,18 +34,14 @@ class RegistrationManager(AuthManager):
 
 
 class TokenManager(AuthManager):
-    def verify(self) -> bool:
-        try:
-            src = User.from_database(login=self.user.login)
-        except UserNotExistsError:
-            raise
-        else:
-            if self.user != src:
-                raise LoginError
+    def validate(self) -> None:
+        src = User.from_database(login=self.user.login)
+        if self.user != src:
+            raise LoginError
 
-    def make_token(self) -> tuple[dict, int]:
+    def verify(self) -> tuple[dict, int] | None:
         try:
-            self.verify()
+            self.validate()
         except UserNotExistsError as e:
             return {
                 "status": "Forbidden",
@@ -56,6 +52,12 @@ class TokenManager(AuthManager):
                 "status": "Forbidden",
                 "cause": "Invalid credentials.",
             }, 403
+        return None
+
+    def make_token(self) -> tuple[dict, int]:
+        response = self.verify()
+        if response is not None:
+            return response
         else:
             token_user_ud = UnifiedDict(name="token_user")
             user_token_ud = UnifiedDict(name="user_token")
@@ -71,18 +73,9 @@ class TokenManager(AuthManager):
             return {"status": "OK", "token": token}, 200
 
     def revoke_token(self) -> tuple[dict, int]:
-        try:
-            self.verify()
-        except UserNotExistsError as e:
-            return {
-                "status": "Forbidden",
-                "cause": f"User with login {e.login} does not exist.",
-            }, 403
-        except LoginError:
-            return {
-                "status": "Forbidden",
-                "cause": "Invalid credentials.",
-            }, 403
+        response = self.verify()
+        if response is not None:
+            return response
         else:
             token_user_ud = UnifiedDict(name="token_user")
             user_token_ud = UnifiedDict(name="user_token")
