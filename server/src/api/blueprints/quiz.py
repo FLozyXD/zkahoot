@@ -18,8 +18,7 @@ def create() -> tuple[dict, int]:
     except KeyError:
         abort(400)
     quiz.to_database()
-    jsoned_quiz = quiz.to_json()
-    return jsoned_quiz, 200
+    return quiz.to_json(), 200
 
 
 @quiz_bp.route("/delete", methods=["DELETE"])
@@ -30,17 +29,16 @@ def delete() -> int:
     except KeyError:
         abort(400)
 
-    db = DBWrapper()
+    dw = DBWrapper()
     quiz = Quiz.from_database(id=quiz_id)
 
     if g.user.id != quiz.creator_id:
         abort(403)
 
     for question in quiz.questions:
-        db.delete(Answer, id=question.answer.id)
-        db.delete(TextQuestion, id=question.id)
-    db.delete(Quiz, id=quiz_id)
-
+        dw.delete(Answer, id=question.answer.id)
+        dw.delete(TextQuestion, id=question.id)
+    dw.delete(Quiz, id=quiz_id)
     return "", 200
 
 
@@ -55,12 +53,12 @@ def change() -> int:
     old_quiz = Quiz.from_database(id=changed_quiz.id)
     if g.user.id != old_quiz.creator_id:
         abort(403)
-    db = DBWrapper()
+    dw = DBWrapper()
 
     for question in old_quiz.questions:
-        db.delete(Answer, id=question.answer.id)
-        db.delete(TextQuestion, id=question.id)
-    db.delete(Quiz, id=old_quiz.id)
+        dw.delete(Answer, id=question.answer.id)
+        dw.delete(TextQuestion, id=question.id)
+    dw.delete(Quiz, id=old_quiz.id)
 
     changed_quiz.to_database()
     return "", 200
