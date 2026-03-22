@@ -44,8 +44,7 @@ class User:
         if not isinstance(other, User):
             return False
         return (
-            self.login == other.login
-            and self.password_hash == other.password_hash
+            self.login == other.login and self.password_hash == other.password_hash
         )
 
     def to_database(self) -> None:

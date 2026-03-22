@@ -1,5 +1,6 @@
 from src.classes.User import User
 from src.exceptions import UserNotExistsError, UserExistsError, LoginError
+from src.classes.DBWrapper import DBWrapper
 from src.utils import UnifiedDict
 
 from contextlib import suppress
@@ -99,3 +100,55 @@ class TokenManager(AccountManager):
                 del token_user_ud[token]
                 del user_token_ud[self.user.login]
             return {"status": "OK"}, 200
+
+class ChangeCredentialsManager(AccountManager):
+    def __init__(self, login: str, password: str, new_login: str = None, new_password: str = None) -> None:
+        super().__init__(login, password)
+        self.new_login = new_login
+        self.new_password = new_password
+    
+    def change_login(self) -> tuple[dict, int]:
+        response = self.verify()
+        if response is not None:
+            return response
+        try:
+            User.from_database(login=self.new_login)
+        except UserNotExistsError:
+            pass  # логин свободен
+        else:
+            return {
+                "status": "Forbidden",
+                "cause": f"User with login {self.new_login} already exists.",
+            }, 403
+        user = User.from_database(login=self.user.login, password_hash=self.user.password_hash)
+        old_login = user.login
+        user.login = self.new_login
+
+        dw = DBWrapper()
+        dw.modify(user, login=user.login) 
+
+        self._revoke_tokens(old_login)
+        return {"status": "OK"}, 200
+
+    def change_password(self) -> tuple[dict, int]:
+        response = self.verify()
+        if response is not None:
+            return response
+        user = User.from_database(login=self.user.login, password_hash=self.user.password_hash)
+        user.password_hash = User._hash(self.new_password)
+
+        dw = DBWrapper()
+        dw.modify(user, password_hash=user.password_hash) 
+
+        self._revoke_tokens(user.login)
+        return {"status": "OK"}, 200
+
+    def _revoke_tokens(self, login: str) -> None:
+        token_user_ud = UnifiedDict(name="token_user")
+        user_token_ud = UnifiedDict(name="user_token")
+        try:
+            token = user_token_ud[login]
+            del token_user_ud[token]
+            del user_token_ud[login]
+        except KeyError:
+            pass
