@@ -9,6 +9,7 @@ from flask import Blueprint, request, abort, g
 quiz_bp = Blueprint("quiz", __name__, url_prefix="/quiz")
 quiz_bp.before_request(require_token)
 
+
 @quiz_bp.route("/create", methods=["POST"])
 def create() -> tuple[dict, int]:
     body = request.get_json()
@@ -20,54 +21,66 @@ def create() -> tuple[dict, int]:
     jsoned_quiz = quiz.to_json()
     return jsoned_quiz, 200
 
+
 @quiz_bp.route("/delete", methods=["DELETE"])
 def delete() -> int:
     body = request.get_json()
     try:
-        quiz_id = body["query"]
+        quiz_id = body["quiz_id"]
     except KeyError:
-        abort(400) 
-    db = DBWrapper() 
-    quiz = Quiz.from_database(id = quiz_id)
+        abort(400)
+
+    db = DBWrapper()
+    quiz = Quiz.from_database(id=quiz_id)
+
     if g.user.id != quiz.creator_id:
         abort(403)
+
     for question in quiz.questions:
         db.delete(Answer, id=question.answer.id)
         db.delete(TextQuestion, id=question.id)
     db.delete(Quiz, id=quiz_id)
+
     return "", 200
+
 
 @quiz_bp.route("/change", methods=["POST"])
 def change() -> int:
     body = request.get_json()
     try:
         changed_quiz = Quiz.from_json(body)
-    except:
+    except KeyError:
         abort(400)
+
     old_quiz = Quiz.from_database(id=changed_quiz.id)
     if g.user.id != old_quiz.creator_id:
         abort(403)
     db = DBWrapper()
+
     for question in old_quiz.questions:
         db.delete(Answer, id=question.answer.id)
-        db.delete(TextQuestion, id=old_quiz.id)
+        db.delete(TextQuestion, id=question.id)
     db.delete(Quiz, id=old_quiz.id)
+
     changed_quiz.to_database()
     return "", 200
+
 
 @quiz_bp.route("/search", methods=["GET"])
 def search() -> tuple[list[dict], int]:
     try:
-        quiz_name = request.args["query"]
-    except:
+        query = request.args["query"]
+    except KeyError:
         abort(400)
+
     quizzes = []
-    db = DBWrapper()
-    result = db.select(Quiz, quiz_name = quiz_name)
-    for part in result:
+    dw = DBWrapper()
+    selected = dw.select(Quiz, quiz_name=query)
+
+    for q in selected:
         questions = [
             TextQuestion.from_tuple(q)
-            for q in db.select(TextQuestion, quiz_id=part[0])
+            for q in dw.select(TextQuestion, quiz_id=q[0])
         ]
-        quizzes.append(Quiz(part[0], part[1], part[2], questions=questions).to_json())
-    return quizzes, 200
+        quizzes.append(Quiz(q[0], q[1], q[2], questions=questions).to_json())
+    return [q.to_json() for q in quizzes], 200
