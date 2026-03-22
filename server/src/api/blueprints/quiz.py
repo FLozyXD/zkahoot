@@ -80,5 +80,5 @@ def search() -> tuple[list[dict], int]:
             TextQuestion.from_tuple(q)
             for q in dw.select(TextQuestion, quiz_id=q[0])
         ]
-        quizzes.append(Quiz(q[0], q[1], q[2], questions=questions).to_json())
+        quizzes.append(Quiz(q[0], q[1], q[2], questions=questions))
     return [q.to_json() for q in quizzes], 200
