@@ -24,7 +24,13 @@ class Quiz:
         return str(self)
 
     def __iter__(self):
-        return iter([self.id, self.quiz_name, self.creator_id])
+        return iter(
+            [
+                self.id,
+                self.quiz_name,
+                self.creator_id,
+            ]
+        )
 
     def check(self, answers: list[Answer]) -> list[bool]:
         return [
