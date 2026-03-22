@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS Users(
 CREATE TABLE IF NOT EXISTS Quizzes(
     id SERIAL PRIMARY KEY,
     quiz_name VARCHAR(128) NOT NULL,
-    creator_id INT REFERENCES Users(id),
+    creator_id INT REFERENCES Users(id) NOT NULL,
     creation_date DATE, 
     deletion_date DATE
 );
