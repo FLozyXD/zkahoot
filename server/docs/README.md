@@ -1,4 +1,3 @@
-
 # Table of Contents
 
 1.  [API](#org7f0e097)
@@ -6,6 +5,7 @@
     2.  [Endpoints](#orgbda4c05)
         1.  [lobby](#org65d1de7)
         2.  [auth](#org52d8d93)
+        3.  [quiz](#org1234abc)
 
 
 <a id="org7f0e097"></a>
@@ -31,7 +31,7 @@
 
 ### lobby
 
-В этом разлеле необходима авторизация пользователя.
+В этом разделе необходима авторизация пользователя.
 
 -   `/api/lobby/search`
     -   Методы: `GET`
@@ -135,6 +135,62 @@
               "cause": "User with login {login} already exists."
             }
 
+-   `/api/auth/change-login`
+    -   Методы: `POST`
+    -   Принимает:
+        
+            {
+              "login": "{login}",
+              "password": "{password}",
+              "new_login": "{new_login}"
+            }
+    -   Выдает:
+        
+            "200"
+            {
+              "status": "OK"
+            }
+            
+            "403"
+            {
+              "status": "Forbidden",
+              "cause": "Invalid credentials."
+            }
+            
+            "403"
+            {
+              "status": "Forbidden",
+              "cause": "User with login {login} does not exist."
+            }
+
+-   `/api/auth/change-password`
+    -   Методы: `POST`
+    -   Принимает:
+        
+            {
+              "login": "{login}",
+              "password": "{password}",
+              "new_password": "{new_password}"
+            }
+    -   Выдает:
+        
+            "200"
+            {
+              "status": "OK"
+            }
+            
+            "403"
+            {
+              "status": "Forbidden",
+              "cause": "Invalid credentials."
+            }
+            
+            "403"
+            {
+              "status": "Forbidden",
+              "cause": "User with login {login} does not exist."
+            }
+
 -   `/api/auth/get-token`, `/api/auth/make-token`
     -   Методы: `POST`
     -   Принимает:
@@ -191,3 +247,111 @@
               "cause": "User with login {login} does not exist."
             }
 
+
+<a id="org1234abc"></a>
+
+### quiz
+
+В этом разделе необходима авторизация пользователя.
+
+-   `/api/quiz/create`
+    -   Методы: `POST`
+    -   Принимает:
+        
+            {
+              "name": "{quiz name}",
+              "questions": [
+                {
+                  "text": "{question text}",
+                  "answer": "{correct answer}"
+                },
+                ...
+              ]
+            }
+    -   Выдает:
+        
+            {
+              "id": {integer},
+              "name": "{quiz name}",
+              "creator_id": {integer},
+              "questions": [
+                {
+                  "id": {integer},
+                  "text": "{question text}",
+                  "answer": {
+                    "id": {integer},
+                    "text": "{correct answer}"
+                  }
+                },
+                ...
+              ]
+            }
+    -   Комментарий: создает новый квиз. `creator_id` подставляется автоматически из токена авторизации.
+
+-   `/api/quiz/delete`
+    -   Методы: `DELETE`
+    -   Принимает:
+        
+            {
+              "quiz_id": {integer}
+            }
+    -   Выдает:
+        
+            "200"
+            (пустое тело)
+            
+            "403"
+            (если пользователь не является создателем квиза)
+    -   Комментарий: удаляет квиз и все связанные с ним вопросы и ответы.
+
+-   `/api/quiz/change`
+    -   Методы: `POST`
+    -   Принимает:
+        
+            {
+              "id": {integer},
+              "name": "{new quiz name}",
+              "questions": [
+                {
+                  "text": "{new question text}",
+                  "answer": "{new correct answer}"
+                },
+                ...
+              ]
+            }
+    -   Выдает:
+        
+            "200"
+            (пустое тело)
+            
+            "403"
+            (если пользователь не является создателем квиза)
+    -   Комментарий: полностью заменяет существующий квиз новым содержимым. Старые вопросы и ответы удаляются, создаются новые.
+
+-   `/api/quiz/search`
+    -   Методы: `GET`
+    -   Принимает:
+        -   query - параметр ссылки. Строка, которая является частью названия квиза.
+        -   creator_id - параметр ссылки (опционально). Целое число, идентификатор создателя.
+    -   Выдает:
+        
+            [
+              {
+                "id": {integer},
+                "name": "{quiz name}",
+                "creator_id": {integer},
+                "questions": [
+                  {
+                    "id": {integer},
+                    "text": "{question text}",
+                    "answer": {
+                      "id": {integer},
+                      "text": "{correct answer}"
+                    }
+                  },
+                  ...
+                ]
+              },
+              ...
+            ]
+    -   Комментарий: поиск квизов по названию (частичное совпадение) и/или по идентификатору создателя. Если параметры не указаны, возвращает ошибку 400.
