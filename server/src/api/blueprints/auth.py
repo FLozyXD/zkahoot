@@ -16,7 +16,7 @@ def register() -> dict:
     return rm.register()
 
 
-@auth_bp.route("/change_login", methods=["POST"])
+@auth_bp.route("/change-login", methods=["POST"])
 def change_login() -> dict:
     body = request.get_json()
     try:
@@ -29,7 +29,7 @@ def change_login() -> dict:
     return cm.change_login()
 
 
-@auth_bp.route("/change_password", methods=["POST"])
+@auth_bp.route("/change-password", methods=["POST"])
 def change_password() -> dict:
     body = request.get_json()
     try:

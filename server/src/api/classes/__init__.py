@@ -1,1 +1,1 @@
-from .AuthManager import TokenManager, RegistrationManager
+from .AuthManager import TokenManager, RegistrationManager, ChangeCredentialsManager

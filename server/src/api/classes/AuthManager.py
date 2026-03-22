@@ -1,5 +1,6 @@
 from src.classes.User import User
 from src.exceptions import UserNotExistsError, UserExistsError, LoginError
+from src.classes.DBWrapper import DBWrapper
 from src.utils import UnifiedDict
 
 from contextlib import suppress
@@ -119,10 +120,13 @@ class ChangeCredentialsManager(AccountManager):
                 "status": "Forbidden",
                 "cause": f"User with login {self.new_login} already exists.",
             }, 403
-        user = User.from_database(login=self.user.login, password_hash=self.user.password)
+        user = User.from_database(login=self.user.login, password_hash=self.user.password_hash)
         old_login = user.login
         user.login = self.new_login
-        user.modify_database() 
+
+        dw = DBWrapper()
+        dw.modify(user, login=user.login) 
+
         self._revoke_tokens(old_login)
         return {"status": "OK"}, 200
 
@@ -130,9 +134,12 @@ class ChangeCredentialsManager(AccountManager):
         response = self.verify()
         if response is not None:
             return response
-        user = User.from_database(login=self.user.login, password_hash=self.user.password)
-        user.password = User._hash(self.new_password)
-        user.modify_database()
+        user = User.from_database(login=self.user.login, password_hash=self.user.password_hash)
+        user.password_hash = User._hash(self.new_password)
+
+        dw = DBWrapper()
+        dw.modify(user, password_hash=user.password_hash) 
+
         self._revoke_tokens(user.login)
         return {"status": "OK"}, 200
 
