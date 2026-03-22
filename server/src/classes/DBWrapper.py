@@ -20,7 +20,7 @@ class DBWrapper:
             case "User":
                 sql = "INSERT INTO Users (login, password_hash) VALUES (%s, %s) RETURNING id"
             case "Quiz":
-                sql = "INSERT INTO Quizzes (creator_id, creation_date, deletion_date) VALUES (%s, %s, %s) RETURNING id"
+                sql = "INSERT INTO Quizzes (quiz_name, creator_id) VALUES (%s, %s) RETURNING id"
             case "Answer":
                 sql = "INSERT INTO Answers (answer) VALUES (%s) RETURNING id"
             case "Question" | "TextQuestion":
@@ -44,7 +44,9 @@ class DBWrapper:
         if not query:
             raise ValueError(f"Attempted to delete ALL records from '{table}'")
         else:
-            where_clause = " AND ".join([f"{key} = %s" for key in query.keys()])
+            where_clause = " AND ".join(
+                [f"{key} = %s" for key in query.keys()]
+            )
             sql = f"DELETE FROM {table} WHERE {where_clause}"
             self.db.run(sql, tuple(query.values()))
 
@@ -65,9 +67,13 @@ class DBWrapper:
             result = [tuple(r) for r in self.db.all(sql)]
             return result
         else:
-            where_clause = " AND ".join([f"{key} = %s" for key in query.keys()])
+            where_clause = " AND ".join(
+                [f"{key} = %s" for key in query.keys()]
+            )
             sql = f"SELECT * FROM {table} WHERE {where_clause}"
-            result = [tuple(r) for r in self.db.all(sql, tuple(query.values()))]
+            result = [
+                tuple(r) for r in self.db.all(sql, tuple(query.values()))
+            ]
             return result
 
     def modify(self, obj, **query) -> None:

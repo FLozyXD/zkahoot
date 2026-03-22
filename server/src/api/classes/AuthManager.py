@@ -77,7 +77,7 @@ class TokenManager(AccountManager):
             token_user_ud = UnifiedDict(name="token_user")
             user_token_ud = UnifiedDict(name="user_token")
             user = User.from_database(
-                login=self.user.login, password_hash=self.user.password
+                login=self.user.login, password_hash=self.user.password_hash
             )
             try:
                 token = user_token_ud[user.login]

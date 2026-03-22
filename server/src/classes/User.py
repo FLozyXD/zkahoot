@@ -9,7 +9,7 @@ class User:
     # Attribute __slots__ is declared and often used in these methods
     # because it guarantees an immutable set of properties.
     # Reference: https://docs.python.org/3/reference/datamodel.html#object.__slots__
-    __slots__ = "id", "login", "password"
+    __slots__ = "id", "login", "password_hash"
 
     def __init__(
         self,
@@ -23,7 +23,7 @@ class User:
         # Arguments are assumed to be sanitized at this point.
         self.id = id_
         self.login = login
-        self.password = self._hash(password) if do_hash else password
+        self.password_hash = self._hash(password) if do_hash else password
 
     @staticmethod
     def _hash(data: str) -> str:
@@ -43,7 +43,9 @@ class User:
     def __eq__(self, other) -> bool:
         if not isinstance(other, User):
             return False
-        return self.login == other.login and self.password == other.password
+        return (
+            self.login == other.login and self.password_hash == other.password
+        )
 
     def to_database(self) -> None:
         db = DBWrapper()

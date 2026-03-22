@@ -6,7 +6,7 @@ def main() -> None:
     with open("config.toml", "rb") as file:
         config = tomllib.load(file)
     app = api.create_app()
-    app.run(port=config["general"]["port"])
+    app.run(port=config["general"]["port"], debug=True)
 
 
 if __name__ == "__main__":

@@ -74,6 +74,7 @@ class TextQuestion(AbstractQuestion):
 
     def to_database(self) -> None:
         db = DBWrapper()
+        db.insert(self.answer)
         db.insert(self)
 
     def modify_database(self) -> None:
@@ -87,7 +88,7 @@ class TextQuestion(AbstractQuestion):
     def from_database(**query) -> AbstractQuestion:
         db = DBWrapper()
         question = db.select(TextQuestion, **query)[0]
-        answer = Answer.from_database(question["answer_id"])
+        answer = Answer.from_database(id=question["answer_id"])
         return TextQuestion(
             question[0],
             question[1],
@@ -119,7 +120,7 @@ class TextQuestion(AbstractQuestion):
 
     @staticmethod
     def from_tuple(question: tuple):
-        answer = Answer.from_database(question[4])
+        answer = Answer.from_database(id=question[4])
         return TextQuestion(
             question[0],
             question[1],
