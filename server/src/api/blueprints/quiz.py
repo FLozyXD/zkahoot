@@ -53,23 +53,28 @@ def delete() -> int:
 def change() -> int:
     body = request.get_json()
     try:
-        changed_quiz = Quiz.from_json(body)
+        new = Quiz.from_json(body)
     except KeyError:
         abort(400)
 
-    old_quiz = Quiz.from_database(id=changed_quiz.id)
-    if g.user.id != old_quiz.creator_id:
+    old = Quiz.from_database(id=new.id)
+    if g.user.id != old.creator_id:
         abort(403)
     dw = DBWrapper()
 
-    for question in old_quiz.questions:
+    # ИСПРАВИТЬ СУКА!!!!!!
+    dw.modify(new, id=old.id)
+
+    for question in old.questions:
         q_id = question.id
         a_id = question.answer.id
         dw.delete(TextQuestion, id=q_id)
         dw.delete(Answer, id=a_id)
-    dw.delete(Quiz, id=old_quiz.id)
 
-    changed_quiz.to_database()
+    for question in new.questions:
+        question.quiz_id = new.id
+        question.to_database()
+
     return "", 200
 
 
