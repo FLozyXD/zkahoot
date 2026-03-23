@@ -146,7 +146,8 @@ class DBWrapper:
 
     def _select_user(self, **query) -> list[Iterable]:
         return [
-            User(*obj_t) for obj_t in self._select_from_table("users", **query)
+            User(*obj_t, do_hash=False)
+            for obj_t in self._select_from_table("users", **query)
         ]
 
     def commit(self) -> None:
