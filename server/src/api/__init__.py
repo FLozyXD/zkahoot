@@ -1,5 +1,3 @@
-from .blueprints import auth_bp, lobby_bp, quiz_bp
-
 from flask import Flask, Blueprint
 from pathlib import Path
 import tomllib
