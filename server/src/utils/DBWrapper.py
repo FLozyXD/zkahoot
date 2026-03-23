@@ -71,10 +71,10 @@ class DBWrapper:
         )
 
     def _delete_answer(self, obj) -> None:
-        self._delete_from_table("anwers", id=obj.id)
+        self._delete_from_table("answers", id=obj.id)
 
     def _delete_question(self, obj) -> None:
-        self._delete_from_table("quesions", id=obj.id)
+        self._delete_from_table("questions", id=obj.id)
         self._delete_answer(obj.answer)
 
     def _delete_quiz(self, obj) -> None:
@@ -123,7 +123,7 @@ class DBWrapper:
     def _select_answer(self, **query) -> list[Answer]:
         return [
             Answer(*obj_t)
-            for obj_t in self._select_from_table("answer", **query)
+            for obj_t in self._select_from_table("answers", **query)
         ]
 
     def _select_question(self, **query) -> list[Iterable]:
@@ -131,7 +131,7 @@ class DBWrapper:
         for obj_t in self._select_from_table("questions", **query):
             answer = self._select_answer(id=obj_t[4])[0]
             question = TextQuestion(
-                obj_t[0], obj_t[1], obj_t[2], obj_t[3], answer, obj_t[5]
+                obj_t[0], obj_t[1], obj_t[2], answer, obj_t[5]
             )
             questions.append(question)
         return questions
@@ -139,8 +139,8 @@ class DBWrapper:
     def _select_quiz(self, **query) -> list[Iterable]:
         quizzes = []
         for obj_t in self._select_from_table("quizzes", **query):
-            questions = self._select_question(quiz_id=obj_t[1])
-            quiz = Quiz(*obj_t, questions)
+            questions = self._select_question(quiz_id=obj_t[0])
+            quiz = Quiz(*obj_t[:3], questions)
             quizzes.append(quiz)
         return quizzes
 
@@ -150,7 +150,7 @@ class DBWrapper:
         ]
 
     def commit(self) -> None:
-        self.cur.commit()
+        self.conn.commit()
 
     def close(self) -> None:
         self.cur.close()
@@ -202,10 +202,10 @@ class DBWrapper:
             case "Answer":
                 return self._select_answer(**query)
             case "TextQuestion":
-                return self._update_question(**query)
+                return self._select_question(**query)
             case "User":
-                return self._update_user(**query)
+                return self._select_user(**query)
             case "Quiz":
-                return self._update_quiz(**query)
+                return self._select_quiz(**query)
             case _:
                 raise TypeError("Invalid class!")

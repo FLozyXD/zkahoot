@@ -21,10 +21,6 @@ class AbstractQuestion(ABC):
     @abstractmethod
     def from_json(question: dict): ...
 
-    @staticmethod
-    @abstractmethod
-    def from_tuple(question: tuple): ...
-
 
 class TextQuestion(AbstractQuestion):
     question_type = "text"
