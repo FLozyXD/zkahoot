@@ -1,3 +1,7 @@
+from .auth import auth_bp
+from .lobby import lobby_bp
+from .quiz import quiz_bp
+
 from flask import Flask, Blueprint
 from pathlib import Path
 import tomllib
