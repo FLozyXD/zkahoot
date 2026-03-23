@@ -1,6 +1,5 @@
 from src.classes.Question import TextQuestion
 from src.classes.Answer import Answer
-from src.classes.DBWrapper import DBWrapper
 
 
 class Quiz:
@@ -11,7 +10,6 @@ class Quiz:
         creator_id: int | None,
         questions: list[TextQuestion] = [],
     ) -> None:
-        self.db = DBWrapper()
         self.id = id
         self.quiz_name = quiz_name
         self.creator_id = creator_id
@@ -41,25 +39,6 @@ class Quiz:
         self, answer: Answer, question_index: int
     ) -> bool:  # whynot
         return self.questions[question_index].answer == answer
-
-    def to_database(self) -> None:
-        self.db.insert(self)
-        for question in self.questions:
-            question.quiz_id = self.id
-            question.to_database()
-
-    def modify_database(self) -> None:
-        self.db.modify(self, id=self.id)
-
-    @staticmethod
-    def from_database(**query):
-        db = DBWrapper()
-        result = db.select(Quiz, **query)[0]
-        questions = [
-            TextQuestion.from_tuple(q)
-            for q in db.select(TextQuestion, quiz_id=result[0])
-        ]
-        return Quiz(result[0], result[1], result[2], questions=questions)
 
     def to_json(self) -> dict:
         return {

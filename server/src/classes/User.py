@@ -1,7 +1,6 @@
 import hashlib
 
 from src.exceptions import UserNotExistsError
-from src.classes.DBWrapper import DBWrapper
 from typing import Optional
 
 
@@ -44,24 +43,9 @@ class User:
         if not isinstance(other, User):
             return False
         return (
-            self.login == other.login and self.password_hash == other.password_hash
+            self.login == other.login
+            and self.password_hash == other.password_hash
         )
-
-    def to_database(self) -> None:
-        db = DBWrapper()
-        db.insert(self)
-
-    def modify_database(self) -> None:
-        db = DBWrapper()
-        db.modify(self)
-
-    @staticmethod
-    def from_database(**query) -> Optional[None]:
-        db = DBWrapper()
-        if not (users := db.select(User, **query)):
-            raise UserNotExistsError(query["login"])
-        # Database stores a hashsum. Don't hash it again.
-        return User(*users[0], do_hash=False)
 
     def to_json(self) -> dict:
         return {s: getattr(self, s) for s in User.__slots__}
