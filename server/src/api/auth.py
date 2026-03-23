@@ -30,6 +30,8 @@ class AuthorizedUserAPI(UserAPI):
                 abort(404)
         if user == self.user:
             self.user = user
+            self.token_user_ud = UnifiedDict(name="token_user")
+            self.user_token_ud = UnifiedDict(name="user_token")
         else:
             abort(403)
 
@@ -49,14 +51,12 @@ class TokenMakerAPI(AuthorizedUserAPI):
         return f"Bearer {token_hex()}"
 
     def authorize(self) -> str:
-        token_user_ud = UnifiedDict(name="token_user")
-        user_token_ud = UnifiedDict(name="user_token")
         try:
-            return user_token_ud[self.user.login]
+            return self.user_token_ud[self.user.login]
         except KeyError:
             token = self.generate_token()
-            token_user_ud[token] = self.user
-            user_token_ud[self.user.login] = token
+            self.token_user_ud[token] = self.user
+            self.user_token_ud[self.user.login] = token
             return token
 
     def post(self) -> tuple[dict, int]:
@@ -69,12 +69,10 @@ class TokenRevokerAPI(AuthorizedUserAPI):
         self.revoke()
 
     def revoke(self) -> None:
-        token_user_ud = UnifiedDict(name="token_user")
-        user_token_ud = UnifiedDict(name="user_token")
         with suppress(KeyError):
-            token = user_token_ud[self.user.login]
-            del token_user_ud[token]
-            del user_token_ud[self.user.login]
+            token = self.user_token_ud[self.user.login]
+            del self.token_user_ud[token]
+            del self.user_token_ud[self.user.login]
 
     def post(self) -> tuple[dict, int]:
         return {"status": "OK"}
