@@ -114,7 +114,7 @@ class DBWrapper:
         )
 
     def _update_user(self, obj) -> None:
-        obj_t = tuple(obj)[1:]
+        obj_t = tuple(obj)[1:] + (obj.id,)
         self.cur.execute(
             "UPDATE users SET login = %s, password_hash = %s WHERE id = %s",
             obj_t,
