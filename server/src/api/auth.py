@@ -12,6 +12,9 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 class UserAPI(MethodView):
     def __init__(self) -> None:
+        self._verify_request()
+
+    def _verify_request(self) -> None:
         body = request.get_json()
         try:
             login, password = body["login"], body["password"]
@@ -30,6 +33,8 @@ class AuthorizedUserAPI(UserAPI):
                 abort(404)
         if user == self.user:
             self.user = user
+            self.token_user_ud = UnifiedDict(name="token_user")
+            self.user_token_ud = UnifiedDict(name="user_token")
         else:
             abort(403)
 
@@ -99,36 +104,32 @@ class ChangePasswordAPI(AuthorizedUserAPI):
 
 
 class TokenMakerAPI(AuthorizedUserAPI):
-    def generate_token(self) -> str:
+    def _generate_token(self) -> str:
         return f"Bearer {token_hex()}"
 
-    def authorize(self) -> str:
-        token_user_ud = UnifiedDict(name="token_user")
-        user_token_ud = UnifiedDict(name="user_token")
+    def _authorize(self) -> str:
         try:
-            return user_token_ud[self.user.login]
+            return self.user_token_ud[self.user.login]
         except KeyError:
-            token = self.generate_token()
-            token_user_ud[token] = self.user
-            user_token_ud[self.user.login] = token
+            token = self._generate_token()
+            self.token_user_ud[token] = self.user
+            self.user_token_ud[self.user.login] = token
             return token
 
     def post(self) -> tuple[dict, int]:
-        return {"status": "OK", "token": self.authorize()}
+        return {"status": "OK", "token": self._authorize()}
 
 
 class TokenRevokerAPI(AuthorizedUserAPI):
     def __init__(self) -> None:
         super().__init__()
-        self.revoke()
+        self._revoke()
 
-    def revoke(self) -> None:
-        token_user_ud = UnifiedDict(name="token_user")
-        user_token_ud = UnifiedDict(name="user_token")
+    def _revoke(self) -> None:
         with suppress(KeyError):
-            token = user_token_ud[self.user.login]
-            del token_user_ud[token]
-            del user_token_ud[self.user.login]
+            token = self.user_token_ud[self.user.login]
+            del self.token_user_ud[token]
+            del self.user_token_ud[self.user.login]
 
     def post(self) -> tuple[dict, int]:
         return {"status": "OK"}

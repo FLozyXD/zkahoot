@@ -15,8 +15,12 @@ class Lobby:
     ) -> None:
         if token is None:
             self.token = secrets.token_hex()
+        else:
+            self.token = token
         if name is None:
             self.name = self.token
+        else:
+            self.name = name
         self.owner_id = owner_id
         self.users = users
         self.quiz = quiz
@@ -36,7 +40,7 @@ class Lobby:
     def run(self) -> None:
         self.running = True
 
-    def check(self, answers: list[Answer]) -> list[bool]:
+    def compare(self, answers: list[Answer]) -> list[bool]:
         if self.running:
             return self.quiz.check(answers)
         raise ValueError
