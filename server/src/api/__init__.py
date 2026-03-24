@@ -8,7 +8,8 @@ import tomllib
 
 
 def create_app(
-    config_path: Path = Path("config.toml"), blueprints=[auth_bp, lobby_bp]
+    config_path: Path = Path("config.toml"),
+    blueprints=[auth_bp, lobby_bp, quiz_bp],
 ) -> Flask:
     with open(config_path, "rb") as file:
         config = tomllib.load(file)
