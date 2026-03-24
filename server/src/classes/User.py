@@ -1,22 +1,28 @@
 import hashlib
 
-from exceptions import UserNotExistsError
-from classes.DBWrapper import DBWrapper
+from src.exceptions import UserNotExistsError
+from typing import Optional
 
 
 class User:
     # Attribute __slots__ is declared and often used in these methods
     # because it guarantees an immutable set of properties.
     # Reference: https://docs.python.org/3/reference/datamodel.html#object.__slots__
-    __slots__ = "id", "login", "password"
+    __slots__ = "id", "login", "password_hash"
 
     def __init__(
-        self, id_: int | None, login: str, password: str, /, *, do_hash: bool = True
+        self,
+        id_: int | None,
+        login: str,
+        password: str,
+        /,
+        *,
+        do_hash: bool = True,
     ) -> None:
         # Arguments are assumed to be sanitized at this point.
         self.id = id_
         self.login = login
-        self.password = self._hash(password) if do_hash else password
+        self.password_hash = self._hash(password) if do_hash else password
 
     @staticmethod
     def _hash(data: str) -> str:
@@ -36,29 +42,15 @@ class User:
     def __eq__(self, other) -> bool:
         if not isinstance(other, User):
             return False
-        # FIXME: Since ID is a primary key, do we have to compare _every_ property?
-        return all(getattr(self, s) == getattr(other, s) for s in User.__slots__)
-
-    def to_database(self) -> None:
-        db = DBWrapper()
-        db.insert(self)
-
-    def modify_database(self) -> None:
-        db = DBWrapper()
-        db.modify(self)
-
-    @staticmethod
-    def from_database(**query) -> Optional[None]:
-        db = DBWrapper()
-        if not (users := db.select(User, **query)):
-            raise UserNotExistsError(query["login"])
-        # Database stores a hashsum. Don't hash it again.
-        return User(*users[0], do_hash=False)
+        return (
+            self.login == other.login
+            and self.password_hash == other.password_hash
+        )
 
     def to_json(self) -> dict:
         return {s: getattr(self, s) for s in User.__slots__}
 
     @staticmethod
-    def from_json(user: dict, /) -> User:
+    def from_json(user: dict, /):
         params = [user[s] for s in User.__slots__]
         return User(*params)

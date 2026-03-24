@@ -217,3 +217,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Configuration files
+config.toml
+
+# MacOS files
+.DS_Store
