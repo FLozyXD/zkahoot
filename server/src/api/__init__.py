@@ -1,4 +1,6 @@
-from .blueprints import auth_bp, lobby_bp, quiz_bp
+from .auth import auth_bp
+from .lobby import lobby_bp
+from .quiz import quiz_bp
 
 from flask import Flask, Blueprint
 from pathlib import Path

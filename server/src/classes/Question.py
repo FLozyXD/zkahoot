@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from src.classes.DBWrapper import DBWrapper
 from src.classes.Answer import Answer
 
 
@@ -16,25 +15,11 @@ class AbstractQuestion(ABC):
     def __iter__(self): ...
 
     @abstractmethod
-    def to_database(self) -> None: ...
-
-    @abstractmethod
-    def modify_database(self) -> None: ...
-
-    @staticmethod
-    @abstractmethod
-    def from_database(**query): ...
-
-    @abstractmethod
     def to_json(self) -> dict: ...
 
     @staticmethod
     @abstractmethod
     def from_json(question: dict): ...
-
-    @staticmethod
-    @abstractmethod
-    def from_tuple(question: tuple): ...
 
 
 class TextQuestion(AbstractQuestion):
@@ -72,32 +57,6 @@ class TextQuestion(AbstractQuestion):
             ]
         )
 
-    def to_database(self) -> None:
-        db = DBWrapper()
-        db.insert(self.answer)
-        db.insert(self)
-
-    def modify_database(self) -> None:
-        db = DBWrapper()
-        db.modify(
-            self,
-            id=self.id,
-        )
-
-    @staticmethod
-    def from_database(**query) -> AbstractQuestion:
-        db = DBWrapper()
-        question = db.select(TextQuestion, **query)[0]
-        answer = Answer.from_database(id=question["answer_id"])
-        return TextQuestion(
-            question[0],
-            question[1],
-            question[2],
-            question[3],
-            answer,
-            question[4],
-        )
-
     def to_json(self) -> dict:
         return {
             "id": self.id,
@@ -116,15 +75,4 @@ class TextQuestion(AbstractQuestion):
             question["question"],
             Answer.from_json(question["answer"]),
             question["type_dependent"],
-        )
-
-    @staticmethod
-    def from_tuple(question: tuple):
-        answer = Answer.from_database(id=question[4])
-        return TextQuestion(
-            question[0],
-            question[1],
-            question[2],
-            answer,
-            question[5],
         )
