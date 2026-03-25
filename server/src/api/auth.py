@@ -13,14 +13,17 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 class UserAPI(MethodView):
     def __init__(self) -> None:
         self._verify_request()
+        body = request.get_json()
+        login, password = body["login"], body["password"]
+        self.user = User(None, login, password)
 
     def _verify_request(self) -> None:
         body = request.get_json()
         try:
-            login, password = body["login"], body["password"]
+            body["login"]
+            body["password"]
         except KeyError:
             abort(400)
-        self.user = User(None, login, password)
 
 
 class AuthorizedUserAPI(UserAPI):
@@ -46,60 +49,6 @@ class RegisterAPI(UserAPI):
                 dbw.insert(self.user)
             except UniqueViolation:
                 abort(403)
-        return {"status": "OK"}, 200
-
-
-class ChangeLoginAPI(AuthorizedUserAPI):
-    def __init__(self) -> None:
-        super().__init__()
-        body = request.get_json()
-        try:
-            self.new_login = body["new_login"]
-        except KeyError:
-            abort(400)
-
-    def post(self) -> tuple[dict, int]:
-        with DBWrapper() as dbw:
-            try:
-                user = dbw.select(User, login=self.new_login)
-                if user:
-                    return {
-                        "status": "Forbidden",
-                        "cause": f"User with login {self.new_login} already exists.",
-                    }, 403
-            except IndexError:
-                pass  # Login is available
-            old_login = self.user.login
-            self.user.login = self.new_login
-            dbw.update(self.user)
-        token_user_ud = UnifiedDict(name="token_user")
-        user_token_ud = UnifiedDict(name="user_token")
-        with suppress(KeyError):
-            token = user_token_ud[old_login]
-            del token_user_ud[token]
-            del user_token_ud[old_login]
-        return {"status": "OK"}, 200
-
-
-class ChangePasswordAPI(AuthorizedUserAPI):
-    def __init__(self) -> None:
-        super().__init__()
-        body = request.get_json()
-        try:
-            self.new_password = body["new_password"]
-        except KeyError:
-            abort(400)
-
-    def post(self) -> tuple[dict, int]:
-        with DBWrapper() as dbw:
-            self.user.password_hash = User._hash(self.new_password)
-            dbw.update(self.user)
-        token_user_ud = UnifiedDict(name="token_user")
-        user_token_ud = UnifiedDict(name="user_token")
-        with suppress(KeyError):
-            token = user_token_ud[self.user.login]
-            del token_user_ud[token]
-            del user_token_ud[self.user.login]
         return {"status": "OK"}, 200
 
 
@@ -135,6 +84,62 @@ class TokenRevokerAPI(AuthorizedUserAPI):
         return {"status": "OK"}
 
 
+class ChangeLoginAPI(TokenRevokerAPI):
+    def __init__(self) -> None:
+        super().__init__()
+        body = request.get_json()
+        self.new_login = body["new_login"]
+
+    def _verify_request(self) -> None:
+        super()._verify_request()
+        body = request.get_json()
+        try:
+            body["new_login"]
+        except KeyError:
+            abort(400)
+
+    def post(self) -> tuple[dict, int]:
+        updated_user = User(
+            self.user.id,
+            self.new_login,
+            self.user.password_hash,
+            do_hash=False,
+        )
+        with DBWrapper() as dbw:
+            try:
+                dbw.update(updated_user)
+                self._revoke()
+            except UniqueViolation:
+                abort(403)
+        return {"status": "OK"}, 200
+
+
+class ChangePasswordAPI(TokenRevokerAPI):
+    def __init__(self) -> None:
+        super().__init__()
+        body = request.get_json()
+        self.new_password = body["new_password"]
+
+    def _verify_request(self) -> None:
+        super()._verify_request()
+        body = request.get_json()
+        try:
+            body["new_password"]
+        except KeyError:
+            abort(400)
+
+    def post(self) -> tuple[dict, int]:
+        updated_user = User(
+            self.user.id,
+            self.user.login,
+            self.new_password,
+        )
+        with DBWrapper() as dbw:
+            dbw.update(updated_user)
+        self._revoke()
+        return {"status": "OK"}, 200
+
+
 class Authorizer:
     @staticmethod
     def require_token() -> None:
@@ -153,10 +158,18 @@ class Authorizer:
 
 
 auth_bp.add_url_rule("/register", view_func=RegisterAPI.as_view("register"))
-auth_bp.add_url_rule("/make-token", view_func=TokenMakerAPI.as_view("make-token"))
-auth_bp.add_url_rule("/get-token", view_func=TokenMakerAPI.as_view("get-token"))
-auth_bp.add_url_rule("/revoke-token", view_func=TokenRevokerAPI.as_view("revoke-token"))
-auth_bp.add_url_rule("/change-login", view_func=ChangeLoginAPI.as_view("change_login"))
+auth_bp.add_url_rule(
+    "/make-token", view_func=TokenMakerAPI.as_view("make-token")
+)
+auth_bp.add_url_rule(
+    "/get-token", view_func=TokenMakerAPI.as_view("get-token")
+)
+auth_bp.add_url_rule(
+    "/revoke-token", view_func=TokenRevokerAPI.as_view("revoke-token")
+)
+auth_bp.add_url_rule(
+    "/change-login", view_func=ChangeLoginAPI.as_view("change_login")
+)
 auth_bp.add_url_rule(
     "/change-password", view_func=ChangePasswordAPI.as_view("change_password")
 )

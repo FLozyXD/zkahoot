@@ -35,18 +35,25 @@ class OuterLobbyAPI(LobbyAPI):
 
 
 class CreateLobbyAPI(OuterLobbyAPI):
+    def __init__(self) -> None:
+        super().__init__()
+        body = request.get_json()
+        self.name = body["name"]
+        quiz_id = body["quiz_id"]
+        with DBWrapper() as dbw:
+            try:
+                quizzes = dbw.select(Quiz, id=quiz_id)
+                self.quiz = quizzes[0]
+            except IndexError:
+                abort(404)
+
     def _verify_request(self) -> None:
         body = request.get_json()
         try:
-            self.name, self.quiz_id = body["name"], body["quiz_id"]
+            body["name"]
+            body["quiz_id"]
         except KeyError:
             abort(400)
-        with DBWrapper() as dbw:
-            try:
-                self.quizzes = dbw.select(Quiz, id=self.quiz_id)
-                self.quiz = self.quizzes[0]
-            except IndexError:
-                abort(404)
 
     def post(self) -> tuple[dict, int]:
         lobby = Lobby(None, self.name, g.user.id, [g.user], self.quiz)
@@ -105,11 +112,16 @@ class PollRunningLobbyAPI(LobbyAPI):
 
 
 class CompareLobbyAPI(InnerLobbyAPI):
+    def __init__(self) -> None:
+        super().__init__()
+        body = request.get_json()
+        self.answers = [Answer(None, answer) for answer in body["answers"]]
+
     def _verify_request(self) -> None:
         body = request.get_json()
         try:
-            self.answers = [Answer(None, answer) for answer in body["answers"]]
-        except KeyError, TypeError:
+            body["answers"]
+        except KeyError:
             abort(400)
 
     def put(self) -> tuple[dict, int]:
@@ -121,9 +133,13 @@ class CompareLobbyAPI(InnerLobbyAPI):
 
 
 class SearchLobbyAPI(LobbyAPI):
+    def __init__(self) -> None:
+        super().__init__()
+        self.query = request.args["query"]
+
     def _verify_request(self) -> None:
         try:
-            self.query = request.args["query"]
+            request.args["query"]
         except KeyError:
             abort(400)
 
