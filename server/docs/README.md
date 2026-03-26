@@ -41,10 +41,62 @@
         
             [
               {
-                "{lobby scheme}"
+				"token": "a1b2c3d4e5f6...",
+				"name": "Моё Лобби",
+				"owner_id": 123,
+				"users": [
+				  "user_001",
+				  "user_002",
+				  "admin_user"
+				],
+				"quiz": {
+				  "id": 456,
+				  "quiz_name": "Тест №1",
+				  "creator_id": 789,
+				  "questions": [
+					{
+					  "id": null,
+					  "question": "Как работает JSON?",
+					  "quiz_id": 0,
+					  "answer": {
+						"id": null,
+						"answer": "..."
+					  },
+					  "type_dependent": ""
+					}
+				  ],
+				  "type_dependent": "",
+				  "question_type": "text"
+				}
               },
               {
-                "{lobby scheme}"
+				"token": "a1b2c3d4e5f6...",
+				"name": "Моё Лобби",
+				"owner_id": 123,
+				"users": [
+				  "user_001",
+				  "user_002",
+				  "admin_user"
+				],
+				"quiz": {
+				  "id": 456,
+				  "quiz_name": "Тест №1",
+				  "creator_id": 789,
+				  "questions": [
+					{
+					  "id": null,
+					  "question": "Как работает JSON?",
+					  "quiz_id": 0,
+					  "answer": {
+						"id": null,
+						"answer": "..."
+					  },
+					  "type_dependent": ""
+					}
+				  ],
+				  "type_dependent": "",
+				  "question_type": "text"
+				}
               }
             ]
 
@@ -78,9 +130,35 @@
     -   Методы: `GET`
     -   Выдает:
         
-            {
-              "{lobby scheme}"
-            }
+			{
+			  "token": "a1b2c3d4e5f6...",
+			  "name": "Моё Лобби",
+			  "owner_id": 123,
+			  "users": [
+				"user_001",
+				"user_002",
+				"admin_user"
+			  ],
+			  "quiz": {
+				"id": 456,
+				"quiz_name": "Тест №1",
+				"creator_id": 789,
+				"questions": [
+				  {
+					"id": null,
+					"question": "Как работает JSON?",
+					"quiz_id": 0,
+					"answer": {
+					  "id": null,
+					  "answer": "..."
+					},
+					"type_dependent": ""
+				  }
+				],
+				"type_dependent": "",
+				"question_type": "text"
+			  }
+			}
 
 -   `/api/lobby/poll-running/<token>`
     -   Методы: `GET`
