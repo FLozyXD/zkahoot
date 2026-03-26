@@ -11,8 +11,11 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
 class UserAPI(MethodView):
+    min_password_length = 8
+
     def __init__(self) -> None:
         self._verify_request()
+        self._verify_login_and_password()
         body = request.get_json()
         login, password = body["login"], body["password"]
         self.user = User(None, login, password)
@@ -24,6 +27,17 @@ class UserAPI(MethodView):
             body["password"]
         except KeyError:
             abort(400)
+
+    def _verify_login_and_password(self) -> None:
+        body = request.get_json()
+        try:
+            login = body["login"]
+            password = body["password"]
+        except KeyError:
+            abort(400)
+        else:
+            if len(password) < self.min_password_length or not login:
+                abort(400)
 
 
 class AuthorizedUserAPI(UserAPI):
@@ -94,9 +108,12 @@ class ChangeLoginAPI(TokenRevokerAPI):
         super()._verify_request()
         body = request.get_json()
         try:
-            body["new_login"]
+            new_login = body["new_login"]
         except KeyError:
             abort(400)
+        else:
+            if not new_login:
+                abort(400)
 
     def post(self) -> tuple[dict, int]:
         updated_user = User(
@@ -124,9 +141,12 @@ class ChangePasswordAPI(TokenRevokerAPI):
         super()._verify_request()
         body = request.get_json()
         try:
-            body["new_password"]
+            new_password = body["new_password"]
         except KeyError:
             abort(400)
+        else:
+            if len(new_password) < self.min_password_length:
+                abort(400)
 
     def post(self) -> tuple[dict, int]:
         updated_user = User(
@@ -158,18 +178,10 @@ class Authorizer:
 
 
 auth_bp.add_url_rule("/register", view_func=RegisterAPI.as_view("register"))
-auth_bp.add_url_rule(
-    "/make-token", view_func=TokenMakerAPI.as_view("make-token")
-)
-auth_bp.add_url_rule(
-    "/get-token", view_func=TokenMakerAPI.as_view("get-token")
-)
-auth_bp.add_url_rule(
-    "/revoke-token", view_func=TokenRevokerAPI.as_view("revoke-token")
-)
-auth_bp.add_url_rule(
-    "/change-login", view_func=ChangeLoginAPI.as_view("change_login")
-)
+auth_bp.add_url_rule("/make-token", view_func=TokenMakerAPI.as_view("make-token"))
+auth_bp.add_url_rule("/get-token", view_func=TokenMakerAPI.as_view("get-token"))
+auth_bp.add_url_rule("/revoke-token", view_func=TokenRevokerAPI.as_view("revoke-token"))
+auth_bp.add_url_rule("/change-login", view_func=ChangeLoginAPI.as_view("change_login"))
 auth_bp.add_url_rule(
     "/change-password", view_func=ChangePasswordAPI.as_view("change_password")
 )
