@@ -15,20 +15,11 @@ class UserAPI(MethodView):
 
     def __init__(self) -> None:
         self._verify_request()
-        self._verify_login_and_password()
         body = request.get_json()
         login, password = body["login"], body["password"]
         self.user = User(None, login, password)
 
     def _verify_request(self) -> None:
-        body = request.get_json()
-        try:
-            body["login"]
-            body["password"]
-        except KeyError:
-            abort(400)
-
-    def _verify_login_and_password(self) -> None:
         body = request.get_json()
         try:
             login = body["login"]
@@ -178,10 +169,18 @@ class Authorizer:
 
 
 auth_bp.add_url_rule("/register", view_func=RegisterAPI.as_view("register"))
-auth_bp.add_url_rule("/make-token", view_func=TokenMakerAPI.as_view("make-token"))
-auth_bp.add_url_rule("/get-token", view_func=TokenMakerAPI.as_view("get-token"))
-auth_bp.add_url_rule("/revoke-token", view_func=TokenRevokerAPI.as_view("revoke-token"))
-auth_bp.add_url_rule("/change-login", view_func=ChangeLoginAPI.as_view("change_login"))
+auth_bp.add_url_rule(
+    "/make-token", view_func=TokenMakerAPI.as_view("make-token")
+)
+auth_bp.add_url_rule(
+    "/get-token", view_func=TokenMakerAPI.as_view("get-token")
+)
+auth_bp.add_url_rule(
+    "/revoke-token", view_func=TokenRevokerAPI.as_view("revoke-token")
+)
+auth_bp.add_url_rule(
+    "/change-login", view_func=ChangeLoginAPI.as_view("change_login")
+)
 auth_bp.add_url_rule(
     "/change-password", view_func=ChangePasswordAPI.as_view("change_password")
 )
