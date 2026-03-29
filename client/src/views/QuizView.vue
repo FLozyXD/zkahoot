@@ -41,7 +41,7 @@
 
       <ul v-if="quizzes.length > 0">
         <li v-for="quiz in quizzes" :key="quiz.id">
-          <strong>{{ quiz.name }}</strong> (Вопросов: {{ quiz.questions.length }})
+          <strong>{{ quiz.quiz_name }}</strong> (Вопросов: {{ quiz.questions.length }})
           <button @click="deleteQuiz(quiz.id)">Удалить</button>
           <!-- В будущем здесь появится кнопка "Создать лобби" -->
         </li>
@@ -66,10 +66,10 @@ const newQuiz = ref({
 // Запрос списка квизов
 const fetchQuizzes = async () => {
   try {
-    const response = await api.get('/quiz/search', {
-      params: { query: searchQuery.value } // Передаем параметр ссылки
+    const response = await api.post('/quiz/search', {
+      quiz_name: searchQuery.value // Передаем параметр ссылки
     });
-    quizzes.value = response.data;
+    quizzes.value = response.data.quizzes;
   } catch (error) {
     console.error('Ошибка при загрузке квизов:', error);
   }
