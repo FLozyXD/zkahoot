@@ -20,7 +20,7 @@
             Удалить вопрос
           </button>
         </div>
-        
+
         <button type="button" @click="addQuestion">Добавить еще вопрос</button>
         <br /><br />
         <button type="submit">Сохранить квиз</button>
@@ -32,7 +32,7 @@
     <!-- Блок списка квизов -->
     <section>
       <h2>Список квизов</h2>
-      
+
       <!-- Поиск (по доке query обязателен, иначе 400 ошибка) -->
       <div>
         <input v-model="searchQuery" placeholder="Поиск по названию..." />
@@ -97,7 +97,7 @@ const removeQuestion = (index) => {
 
 const submitCreateQuiz = async () => {
   try {
-    await api.post('/quiz/create', newQuiz.value);
+    await api.post('/quiz/register', newQuiz.value);
     // Сбрасываем форму после успешного создания
     newQuiz.value = { name: '', questions: [{ text: '', answer: '' }] };
     alert('Квиз успешно создан!');
