@@ -3,11 +3,11 @@
     <!-- Навигация видна только авторизованным пользователям -->
     <nav v-if="authStore.isAuthenticated">
       <router-link to="/">Главная</router-link> | 
+      <router-link to="/quiz">Квизы</router-link> |
       <button @click="onLogout">Выйти</button>
     </nav>
     <hr v-if="authStore.isAuthenticated" />
 
-    <!-- Сюда подставляются наши страницы (LoginView или HomeView) -->
     <router-view />
   </div>
 </template>

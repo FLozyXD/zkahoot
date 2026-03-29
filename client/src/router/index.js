@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
+import QuizView from '../views/QuizView.vue'
 import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
@@ -16,6 +17,12 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/quiz',
+      name: 'quiz',
+      component: QuizView,
       meta: { requiresAuth: true }
     }
   ]
