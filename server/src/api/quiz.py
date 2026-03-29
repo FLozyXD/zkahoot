@@ -22,8 +22,26 @@ class QuizAPI(MethodView):
 class RegisterQuiz(QuizAPI):
     def _verify_request(self) -> None:
         body = dict(request.get_json())
-        body["creator_id"] = g.user.id
-        body = ImmutableDict(body)
+
+        resolved_body = {
+            "id": None,
+            "quiz_name": body["name"],
+            "creator_id": g.user.id,
+            "questions": [],
+        }
+        for q in body["questions"]:
+            resolved_body["questions"].append({
+                "id": None,
+                "quiz_id": None,
+                "question": q["text"],
+                "answer": {
+                    "id": None,
+                    "answer": q["answer"],
+                },
+                "type_dependent": None,
+            })
+
+        body = ImmutableDict(resolved_body)
         try:
             self.quiz = Quiz.from_json(body)
         except KeyError:
