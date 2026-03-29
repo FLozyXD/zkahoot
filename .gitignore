@@ -223,3 +223,7 @@ config.toml
 
 # MacOS files
 .DS_Store
+
+# client
+client/.vscode
+client/node_modules
