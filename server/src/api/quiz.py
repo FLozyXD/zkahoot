@@ -29,13 +29,13 @@ class RegisterQuiz(QuizAPI):
         except KeyError:
             abort(400)
 
-    def post(self) -> tuple[dict, int]:
+    def post(self) -> tuple[str, int]:
         with DBWrapper() as dbw:
             try:
                 dbw.insert(self.quiz)
             except UniqueViolation:
                 abort(403)
-        return {"status": "OK"}, 200
+        return "", 200
 
 
 class DeleteQuiz(QuizAPI):
@@ -48,10 +48,12 @@ class DeleteQuiz(QuizAPI):
         except KeyError:
             abort(400)
 
-    def delete(self) -> tuple[dict, int]:
+    def delete(self) -> tuple[str, int]:
         with DBWrapper() as dbw:
             try:
-                quizzes = dbw.select(Quiz, id=self.quiz_id, creator_id=g.user.id)
+                quizzes = dbw.select(
+                    Quiz, id=self.quiz_id, creator_id=g.user.id
+                )
                 if not quizzes:
                     abort(404)
                 quiz = quizzes[0]
@@ -61,7 +63,7 @@ class DeleteQuiz(QuizAPI):
                 dbw.delete(quiz)
             except ForeignKeyViolation:
                 abort(400)
-        return {"status": "OK"}, 200
+        return "", 200
 
 
 class ChangeQuiz(QuizAPI):
@@ -76,10 +78,12 @@ class ChangeQuiz(QuizAPI):
         except KeyError:
             abort(400)
 
-    def post(self) -> tuple[dict, int]:
+    def post(self) -> tuple[str, int]:
         with DBWrapper() as dbw:
             try:
-                quizzes = dbw.select(Quiz, id=self.quiz_id, creator_id=g.user.id)
+                quizzes = dbw.select(
+                    Quiz, id=self.quiz_id, creator_id=g.user.id
+                )
                 if not quizzes:
                     abort(404)
                 existing_quiz = quizzes[0]
@@ -92,11 +96,11 @@ class ChangeQuiz(QuizAPI):
                 [TextQuestion.from_json(q) for q in self.questions],
             )
             dbw.update(updated_quiz)
-        return {"status": "OK"}, 200
+        return "", 200
 
 
 class SearchQuiz(MethodView):
-    def post(self) -> tuple[dict, int]:
+    def post(self) -> tuple[list[dict], int]:
         body = request.get_json()
         if not body:
             abort(400)
@@ -106,13 +110,13 @@ class SearchQuiz(MethodView):
             abort(400)
         with DBWrapper() as dbw:
             quizzes = dbw.select(Quiz, quiz_name=quiz_name)
-            if not quizzes:
-                return {"quizzes": []}, 200
             quizzes_json = [quiz.to_json() for quiz in quizzes]
-        return {"quizzes": quizzes_json}, 200
+        return quizzes_json, 200
 
 
-quiz_bp.add_url_rule("/register", view_func=RegisterQuiz.as_view("register_quiz"))
+quiz_bp.add_url_rule(
+    "/register", view_func=RegisterQuiz.as_view("register_quiz")
+)
 quiz_bp.add_url_rule("/delete", view_func=DeleteQuiz.as_view("delete_quiz"))
 quiz_bp.add_url_rule("/change", view_func=ChangeQuiz.as_view("change_quiz"))
 quiz_bp.add_url_rule("/search", view_func=SearchQuiz.as_view("search_quiz"))
