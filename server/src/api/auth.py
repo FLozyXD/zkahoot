@@ -53,7 +53,7 @@ class RegisterAPI(UserAPI):
             try:
                 dbw.insert(self.user)
             except UniqueViolation:
-                abort(403)
+                abort(418)
         return "", 200
 
 
