@@ -10,7 +10,7 @@ class DBWrapper:
         self.conn = psycopg2.connect(self.dsn)
         self.cur = self.conn.cursor()
 
-    def __enter__(self) -> None:
+    def __enter__(self):
         return self
 
     def __exit__(self, *args, **kwargs) -> None:
