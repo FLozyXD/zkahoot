@@ -1,5 +1,5 @@
-create table if not exists sessions (
-       login text,
-       token text,
-       primary key (login)
+CREATE TABLE IF NOT EXISTS sessions (
+    login TEXT,
+    token TEXT NOT NULL UNIQUE,
+    PRIMARY KEY (login)
 );
