@@ -1,6 +1,6 @@
 from src.classes import Answer, TextQuestion, User, Quiz
 
-from typing import Iterable
+from typing import Iterable, Self
 import psycopg2
 
 
@@ -10,7 +10,7 @@ class DBWrapper:
         self.conn = psycopg2.connect(self.dsn)
         self.cur = self.conn.cursor()
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *args, **kwargs) -> None:

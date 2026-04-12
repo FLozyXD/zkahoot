@@ -12,7 +12,7 @@ lobby_bp.before_request(Authorizer.require_token)
 
 class LobbyAPI(MethodView):
     def __init__(self) -> None:
-        self.token_lobby_ud = UnifiedDict(name="lobby_user")
+        self.token_lobby_ud = UnifiedDict(name="token_lobby")
         self.user_lobby_ud = UnifiedDict(name="user_lobby")
         self._verify_request()
 

@@ -1,6 +1,7 @@
 from src.classes.Quiz import Quiz
 from src.classes.User import User
 from src.classes.Answer import Answer
+from typing import Iterator
 import secrets
 
 
@@ -44,6 +45,17 @@ class Lobby:
         if self.running:
             return self.quiz.check(answers)
         raise ValueError
+
+    def __iter__(self) -> Iterator:
+        return iter(
+            [
+                self.token,
+                self.name,
+                self.owner_id,
+                self.quiz.id,
+                self.running,
+            ]
+        )
 
     def to_json(self) -> dict:
         return {
