@@ -9,6 +9,6 @@ create table if not exists lobbies (
 
 create table if not exists lobbies_users (
        token text,
-       user_id integer,
+       login text,
        foreign key (token) references lobbies(token)
 )

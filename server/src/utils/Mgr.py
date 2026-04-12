@@ -33,7 +33,10 @@ class AbstractLobbyMgr(ABC):
     def revoke(self, token: str) -> None: ...
 
     @abstractmethod
-    def select(self, token: str) -> Lobby: ...
+    def select_by_token(self, token: str) -> Lobby: ...
+
+    @abstractmethod
+    def select_by_user(self, user: User) -> Lobby: ...
 
     @abstractmethod
     def join(self, token: str, user: User) -> None: ...
@@ -76,13 +79,13 @@ class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
 
     def _select_lobby_users(self, token: str) -> list[User]:
         users_rec = self.cur.execute(
-            "select user_id from lobbies_users where token = ?", (token,)
+            "select login from lobbies_users where token = ?", (token,)
         )
-        users_ids = [id[0] for id in users_rec]
+        users_ids = [login[0] for login in users_rec]
         users = []
         with DBWrapper() as dbw:
-            for id in users_ids:
-                users.append(dbw.select(User, id=id)[0])
+            for login in users_ids:
+                users.append(dbw.select(User, login=login)[0])
         return users
 
     def _select_lobby_quiz(self, id: int) -> Quiz:
@@ -109,7 +112,7 @@ class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
         )
         self.cur.execute(
             "insert into lobbies_users (?, ?)",
-            (lobby.token, user.id),
+            (lobby.token, user.login),
         )
         return lobby
 
@@ -117,7 +120,7 @@ class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
         self.cur.execute("delete from lobbies_users where token = ?", (token,))
         self.cur.execute("delete from lobbies where token = ?", (token,))
 
-    def select(self, token: str) -> Lobby:
+    def select_by_token(self, token: str) -> Lobby:
         lobby_rec = self.cur.execute(
             "select * from lobbies where token = ?", (token,)
         )
@@ -131,18 +134,28 @@ class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
         lobby.running = bool(lobby_t[-1])
         return lobby
 
+    def select_by_user(self, user: User) -> Lobby:
+        token_rec = self.cur.execute(
+            "select token from lobbies_users where login = ?", (user.login,)
+        )
+        token = token_rec.fetchone()
+        if not token:
+            raise LobbyNotExistsError("void")
+        lobby = self.select_by_token(token[0])
+        return lobby
+
     def join(self, token: str, user: User) -> None:
         try:
             self.cur.execute(
-                "insert into lobbies_users values (?, ?)", (token, user.id)
+                "insert into lobbies_users values (?, ?)", (token, user.login)
             )
         except IntegrityError:
             raise LobbyNotExistsError(token)
 
     def kick(self, token: str, user: User) -> None:
         self.cur.execute(
-            "delete from lobbies_users where token = ? and user_id = ?",
-            (token, user.id),
+            "delete from lobbies_users where token = ? and login = ?",
+            (token, user.login),
         )
         ul = self.cur.execute(
             "select from lobbies_users where token = ?", (token,)
@@ -152,6 +165,8 @@ class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
 
 
 class LobbyDictMgr(AbstractLobbyMgr):
+    nbytes = 4
+
     def __init__(self) -> None:
         self.user_lobby = UnifiedDict("user_lobby")
         self.token_lobby = UnifiedDict("token_lobby")
@@ -180,11 +195,18 @@ class LobbyDictMgr(AbstractLobbyMgr):
             for user in lobby.users:
                 del self.user_lobby[user.login]
 
-    def select(self, token: str) -> Lobby:
+    def select_by_token(self, token: str) -> Lobby:
         try:
             lobby = self.token_lobby[token]
         except KeyError:
             raise LobbyNotExistsError(token)
+        return lobby
+
+    def select_by_user(self, user: User) -> Lobby:
+        try:
+            lobby = self.user_lobby[user.login]
+        except KeyError:
+            raise LobbyNotExistsError("void")
         return lobby
 
     def join(self, token: str, user: User) -> None:
