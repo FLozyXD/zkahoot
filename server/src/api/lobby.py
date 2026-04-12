@@ -144,8 +144,7 @@ class SearchLobbyAPI(LobbyAPI):
     def get(self) -> tuple[list[dict], int]:
         return [
             lobby.to_json()
-            for lobby in self.lobby_mgr.token_lobby.values()
-            if self.query in lobby.name
+            for lobby in self.lobby_mgr.select_by_name(self.query)
         ], 200
 
 

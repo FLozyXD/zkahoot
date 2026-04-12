@@ -2,7 +2,7 @@ from src.classes import User, Lobby, Quiz
 from src.utils import DBWrapper, UnifiedDict
 from src.exceptions import LobbyNotExistsError
 
-from typing import Self
+from typing import Self, Iterable
 from sqlite3 import connect, IntegrityError
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -37,6 +37,9 @@ class AbstractLobbyMgr(ABC):
 
     @abstractmethod
     def select_by_user(self, user: User) -> Lobby: ...
+
+    @abstractmethod
+    def select_by_name(self, name: str) -> Iterable[Lobby]: ...
 
     @abstractmethod
     def join(self, token: str, user: User) -> None: ...
@@ -144,6 +147,13 @@ class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
         lobby = self.select_by_token(token[0])
         return lobby
 
+    def select_by_name(self, name: str) -> Iterable[Lobby]:
+        lobby_r = self.cur.execute(
+            "select token from lobbies where name like ?", (name,)
+        )
+        lobbies = [self.select_by_token(token[0]) for token in lobby_r]
+        return lobbies
+
     def join(self, token: str, user: User) -> None:
         try:
             self.cur.execute(
@@ -208,6 +218,12 @@ class LobbyDictMgr(AbstractLobbyMgr):
         except KeyError:
             raise LobbyNotExistsError("void")
         return lobby
+
+    def select_by_name(self, name: str) -> Iterable[Lobby]:
+        lobbies = [
+            lobby for lobby in self.token_lobby.values() if name in lobby.name
+        ]
+        return lobbies
 
     def join(self, token: str, user: User) -> None:
         try:
