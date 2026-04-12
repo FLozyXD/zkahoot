@@ -216,7 +216,10 @@ class LobbyDictMgr(AbstractLobbyMgr):
             raise LobbyNotExistsError(token)
         lobby.join(user)
 
-    def kick(self, token: str, user: User) -> None:
+    def kick(self, user: User) -> None:
         with suppress(KeyError):
-            lobby = self.token_lobby[token]
+            lobby = self.user_lobby[user.login]
             lobby.kick(user)
+            del self.user_lobby[user.login]
+            if not lobby.users:
+                del self.token_lobby[lobby.token]

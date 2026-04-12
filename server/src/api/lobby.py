@@ -1,6 +1,7 @@
-from src.utils import DBWrapper, UnifiedDict
-from src.classes import Lobby, Quiz, Answer
+from src.utils import DBWrapper, LobbyDictMgr
+from src.classes import Quiz, Answer
 from src.api.auth import Authorizer
+from src.exceptions import LobbyNotExistsError
 
 from flask import Blueprint, request, abort, g
 from flask.views import MethodView
@@ -12,8 +13,7 @@ lobby_bp.before_request(Authorizer.require_token)
 
 class LobbyAPI(MethodView):
     def __init__(self) -> None:
-        self.token_lobby_ud = UnifiedDict(name="token_lobby")
-        self.user_lobby_ud = UnifiedDict(name="user_lobby")
+        self.lobby_mgr = LobbyDictMgr()
         self._verify_request()
 
     def _verify_request(self) -> None:
@@ -23,14 +23,20 @@ class LobbyAPI(MethodView):
 class InnerLobbyAPI(LobbyAPI):
     def __init__(self) -> None:
         super().__init__()
-        if g.user.login not in self.user_lobby_ud:
+        try:
+            self.lobby_mgr.select_by_user(g.user)
+        except LobbyNotExistsError:
             abort(404)
 
 
 class OuterLobbyAPI(LobbyAPI):
     def __init__(self) -> None:
         super().__init__()
-        if g.user.login in self.user_lobby_ud:
+        try:
+            self.lobby_mgr.select_by_user(g.user)
+        except LobbyNotExistsError:
+            pass
+        else:
             abort(403)
 
 
@@ -56,36 +62,28 @@ class CreateLobbyAPI(OuterLobbyAPI):
             abort(400)
 
     def post(self) -> tuple[dict, int]:
-        lobby = Lobby(None, self.name, g.user.id, [g.user], self.quiz)
-        self.user_lobby_ud[g.user.login] = lobby
-        self.token_lobby_ud[lobby.token] = lobby
+        lobby = self.lobby_mgr.create(self.name, g.user, self.quiz)
         return {"token": lobby.token}, 200
 
 
 class JoinLobbyAPI(OuterLobbyAPI):
     def post(self, token: str) -> tuple[dict, int]:
         try:
-            lobby = self.token_lobby_ud[token]
-        except KeyError:
+            self.lobby_mgr.join(token, g.user)
+        except LobbyNotExistsError:
             abort(404)
-        lobby.join(g.user)
-        self.user_lobby_ud[g.user.login] = lobby
         return "", 200
 
 
 class ExitLobbyAPI(InnerLobbyAPI):
     def post(self) -> tuple[dict, int]:
-        lobby = self.user_lobby_ud[g.user.login]
-        lobby.kick(g.user)
-        del self.user_lobby_ud[g.user.login]
-        if not lobby.users:
-            del self.token_lobby_ud[lobby.token]
+        self.lobby_mgr.kick(g.user)
         return "", 200
 
 
 class RunLobbyAPI(InnerLobbyAPI):
     def post(self) -> tuple[dict, int]:
-        lobby = self.user_lobby_ud[g.user.login]
+        lobby = self.lobby_mgr.select_by_user(g.user)
         if g.user.id == lobby.owner_id:
             lobby.run()
             return "", 200
@@ -95,15 +93,15 @@ class RunLobbyAPI(InnerLobbyAPI):
 
 class InfoLobbyAPI(InnerLobbyAPI):
     def get(self) -> tuple[dict, int]:
-        lobby = self.user_lobby_ud[g.user.login]
+        lobby = self.lobby_mgr.select_by_user(g.user)
         return lobby.to_json(), 200
 
 
 class PollRunningLobbyAPI(LobbyAPI):
     def get(self, token: str) -> tuple[dict, int]:
         try:
-            lobby = self.token_lobby_ud[token]
-        except KeyError:
+            lobby = self.lobby_mgr.select_by_token(token)
+        except LobbyNotExistsError:
             abort(404)
         while True:
             if lobby.running:
@@ -121,11 +119,11 @@ class CompareLobbyAPI(InnerLobbyAPI):
         body = request.get_json()
         try:
             body["answers"]
-        except KeyError:
+        except KeyError, TypeError:
             abort(400)
 
     def put(self) -> tuple[dict, int]:
-        lobby = self.user_lobby_ud[g.user.login]
+        lobby = self.lobby_mgr.select_by_user(g.user)
         if lobby.running:
             compared = lobby.compare(self.answers)
             return compared, 200
@@ -146,7 +144,7 @@ class SearchLobbyAPI(LobbyAPI):
     def get(self) -> tuple[list[dict], int]:
         return [
             lobby.to_json()
-            for lobby in self.token_lobby_ud.values()
+            for lobby in self.lobby_mgr.token_lobby.values()
             if self.query in lobby.name
         ], 200
 
