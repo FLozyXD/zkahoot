@@ -15,7 +15,7 @@ class AbstractLobbyMgr(ABC):
     def __enter__(self) -> Self: ...
 
     @abstractmethod
-    def __exit__(self) -> None: ...
+    def __exit__(self, *args, **kwargs) -> None: ...
 
     @property
     @abstractmethod
@@ -60,7 +60,7 @@ class DBMgr:
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(self) -> None:
+    def __exit__(self, *args, **kwargs) -> None:
         self.cur.close()
         self.conn.close()
 
@@ -184,7 +184,7 @@ class LobbyDictMgr(AbstractLobbyMgr):
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(self) -> None:
+    def __exit__(self, *args, **kwargs) -> None:
         pass
 
     def create(

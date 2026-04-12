@@ -12,8 +12,9 @@ lobby_bp.before_request(Authorizer.require_token)
 
 
 class LobbyAPI(MethodView):
+    lobby_mgr_cls = LobbyDictMgr
+
     def __init__(self) -> None:
-        self.lobby_mgr = LobbyDictMgr()
         self._verify_request()
 
     def _verify_request(self) -> None:
@@ -23,21 +24,23 @@ class LobbyAPI(MethodView):
 class InnerLobbyAPI(LobbyAPI):
     def __init__(self) -> None:
         super().__init__()
-        try:
-            self.lobby_mgr.select_by_user(g.user)
-        except LobbyNotExistsError:
-            abort(404)
+        with self.lobby_mgr_cls() as lobby_mgr:
+            try:
+                lobby_mgr.select_by_user(g.user)
+            except LobbyNotExistsError:
+                abort(404)
 
 
 class OuterLobbyAPI(LobbyAPI):
     def __init__(self) -> None:
         super().__init__()
-        try:
-            self.lobby_mgr.select_by_user(g.user)
-        except LobbyNotExistsError:
-            pass
-        else:
-            abort(403)
+        with self.lobby_mgr_cls() as lobby_mgr:
+            try:
+                lobby_mgr.select_by_user(g.user)
+            except LobbyNotExistsError:
+                pass
+            else:
+                abort(403)
 
 
 class CreateLobbyAPI(OuterLobbyAPI):
@@ -62,28 +65,32 @@ class CreateLobbyAPI(OuterLobbyAPI):
             abort(400)
 
     def post(self) -> tuple[dict, int]:
-        lobby = self.lobby_mgr.create(self.name, g.user, self.quiz)
+        with self.lobby_mgr_cls() as lobby_mgr:
+            lobby = lobby_mgr.create(self.name, g.user, self.quiz)
         return {"token": lobby.token}, 200
 
 
 class JoinLobbyAPI(OuterLobbyAPI):
     def post(self, token: str) -> tuple[dict, int]:
-        try:
-            self.lobby_mgr.join(token, g.user)
-        except LobbyNotExistsError:
-            abort(404)
+        with self.lobby_mgr_cls() as lobby_mgr:
+            try:
+                lobby_mgr.join(token, g.user)
+            except LobbyNotExistsError:
+                abort(404)
         return "", 200
 
 
 class ExitLobbyAPI(InnerLobbyAPI):
     def post(self) -> tuple[dict, int]:
-        self.lobby_mgr.kick(g.user)
+        with self.lobby_mgr_cls() as lobby_mgr:
+            lobby_mgr.kick(g.user)
         return "", 200
 
 
 class RunLobbyAPI(InnerLobbyAPI):
     def post(self) -> tuple[dict, int]:
-        lobby = self.lobby_mgr.select_by_user(g.user)
+        with self.lobby_mgr_cls() as lobby_mgr:
+            lobby = lobby_mgr.select_by_user(g.user)
         if g.user.id == lobby.owner_id:
             lobby.run()
             return "", 200
@@ -93,16 +100,18 @@ class RunLobbyAPI(InnerLobbyAPI):
 
 class InfoLobbyAPI(InnerLobbyAPI):
     def get(self) -> tuple[dict, int]:
-        lobby = self.lobby_mgr.select_by_user(g.user)
+        with self.lobby_mgr_cls() as lobby_mgr:
+            lobby = lobby_mgr.select_by_user(g.user)
         return lobby.to_json(), 200
 
 
 class PollRunningLobbyAPI(LobbyAPI):
     def get(self, token: str) -> tuple[dict, int]:
-        try:
-            lobby = self.lobby_mgr.select_by_token(token)
-        except LobbyNotExistsError:
-            abort(404)
+        with self.lobby_mgr_cls() as lobby_mgr:
+            try:
+                lobby = lobby_mgr.select_by_token(token)
+            except LobbyNotExistsError:
+                abort(404)
         while True:
             if lobby.running:
                 return "", 200
@@ -123,7 +132,8 @@ class CompareLobbyAPI(InnerLobbyAPI):
             abort(400)
 
     def put(self) -> tuple[dict, int]:
-        lobby = self.lobby_mgr.select_by_user(g.user)
+        with self.lobby_mgr_cls() as lobby_mgr:
+            lobby = lobby_mgr.select_by_user(g.user)
         if lobby.running:
             compared = lobby.compare(self.answers)
             return compared, 200
@@ -142,10 +152,11 @@ class SearchLobbyAPI(LobbyAPI):
             abort(400)
 
     def get(self) -> tuple[list[dict], int]:
-        return [
-            lobby.to_json()
-            for lobby in self.lobby_mgr.select_by_name(self.query)
-        ], 200
+        with self.lobby_mgr_cls() as lobby_mgr:
+            return [
+                lobby.to_json()
+                for lobby in lobby_mgr.select_by_name(self.query)
+            ], 200
 
 
 lobby_bp.add_url_rule("/create", view_func=CreateLobbyAPI.as_view("create"))
