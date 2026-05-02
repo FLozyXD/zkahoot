@@ -1,0 +1,6 @@
+[general]
+port = "5000"
+
+[general.flask_config]
+# я знаю, что он на гитлабе
+SECRET_KEY = "REMOVED_SECRET"

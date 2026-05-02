@@ -1,0 +1,260 @@
+* API
+
+Ниже приведена документация endpoint'ов, их методов.
+
+** Авторизация
+
+Авторизация производится с помощью токена, который генерируется с помощью endpoint'а ~/api/auth/get-token~. Токен помещается в заголовок ~Authorization~ и проверяется во всех endpoint'ах, где нужна авторизация. По нему же и производится идентификация пользователя на backend'е.
+
+** Endpoints
+
+*** lobby
+
+В этом разлеле необходима авторизация пользователя.
+
++ ~/api/lobby/search~
+  - Методы: ~GET~
+  - Принимает:
+    * q - параметр ссылки. Строка, которая является частью названия квиза, что сейчас в лобби.
+  - Выдает:
+    #+begin_src json
+      [
+        {
+          "{lobby scheme}"
+        },
+        {
+          "{lobby scheme}"
+        }
+      ]
+    #+end_src
+
++ ~/api/lobby/create~
+  - Методы: ~POST~
+  - Принимает:
+    #+begin_src json
+      {
+        "name": "{lobby name}",
+        "quiz_id": {integer}
+      }
+    #+end_src
+  - Выдает:
+    #+begin_src json
+      {
+        "token": "{token}"
+      }
+    #+end_src
+
++ ~/api/lobby/join/<token>~
+  - Методы: ~POST~
+  - Принимает:
+    * <token> - это токен/идентификатор лобби
+
++ ~/api/lobby/exit~
+  - Методы: ~POST~
+
++ ~/api/lobby/run~
+  - Методы: ~POST~
+  - Комментарий: это метод, который запускает игру. Запустить игру может ЛИШЬ ТОЛЬКО обладатель лобби.
+
++ ~/api/lobby/get-info~
+  - Методы: ~GET~
+  - Выдает:
+    #+begin_src json
+      {
+        "{lobby scheme}"
+      }
+    #+end_src
+
++ ~/api/lobby/poll-running/<token>~
+  - Методы: ~GET~
+  - Принимает:
+    * <token> - это токен/идентификатор лобби
+  - Комментарий: вернет пустой ответ с кодом 200, когда запуск все же состоится.
+
++ ~/api/lobby/compare~
+  - Методы: ~POST~
+  - Принимает:
+    #+begin_src json
+      {
+        "answers": [
+          "answer1",
+          "answer2",
+          "answer3",
+          ...
+        ]
+      }
+    #+end_src
+  - Выдает:
+    #+begin_src json
+      [
+        true,
+        false,
+        ...
+      ]
+    #+end_src
+  - Комментарий: это метод сверки ответов. Пользователь и квиз после запуска лобби уже связаны.
+
+*** auth
+
++ ~/api/auth/register~
+  - Методы: ~POST~
+  - Принимает:
+    #+begin_src json
+      {
+        "login": "{login}",
+        "password": "{password}"
+      }
+    #+end_src
+  - Выдает:
+    #+begin_src json
+      "200"
+      {
+        "status": "OK"
+      }
+
+      "403"
+      {
+        "status": "Forbidden",
+        "cause": "User with login {login} already exists."
+      }
+    #+end_src
+
++ ~/api/auth/get-token~, ~/api/auth/make-token~
+  - Методы: ~POST~
+  - Принимает:
+    #+begin_src json
+      {
+        "login": "{login}",
+        "password": "{password}"
+      }
+    #+end_src
+  - Комментарий: ~/api/auth/make-token~ указывает на то же самое место, что и get-token. Последний оставил ради совместимости.
+  - Выдает:
+    #+begin_src json
+      "200"
+      {
+        "status": "OK",
+        "token": "{token}"
+      }
+
+      "403"
+      {
+        "status": "Forbidden",
+        "cause": "Invalid credentials."
+      }
+
+      "403"
+      {
+        "status": "Forbidden",
+        "cause": "User with login {login} does not exist."
+      }
+    #+end_src
+
++ ~/api/auth/revoke-token~
+  - Методы: ~POST~
+  - Принимает:
+    #+begin_src json
+      {
+        "login": "{login}",
+        "password": "{password}"
+      }
+    #+end_src
+  - Выдает:
+    #+begin_src json
+      "200"
+      {
+        "status": "OK",
+      }
+
+      "403"
+      {
+        "status": "Forbidden",
+        "cause": "Invalid credentials."
+      }
+
+      "403"
+      {
+        "status": "Forbidden",
+        "cause": "User with login {login} does not exist."
+      }
+    #+end_src
+
++ ~/api/auth/change_login~
+  - Методы: ~POST~
+  - Принимает:
+    #+begin_src json
+      {
+        "login": "{login}",
+        "password": "{password}",
+        "new_login": "{new_login}"
+      }
+    #+end_src
+  - Выдает:
+    #+begin_src json
+      "200"
+      {
+        "status": "OK"
+      }
+
+      "400"
+      {
+        "status": "Bad Request",
+        "cause": "Missing required fields."
+      }
+
+      "403"
+      {
+        "status": "Forbidden",
+        "cause": "Invalid credentials."
+      }
+
+      "403"
+      {
+        "status": "Forbidden",
+        "cause": "User with login {login} does not exist."
+      }
+
+      "403"
+      {
+        "status": "Forbidden",
+        "cause": "User with login {new_login} already exists."
+      }
+    #+end_src
+  - Комментарий: изменяет логин пользователя. Требует предоставления текущего логина и пароля. В случае успеха все токены пользователя отзываются, и ему необходимо получить новый токен.
+
++ ~/api/auth/change_password~
+  - Методы: ~POST~
+  - Принимает:
+    #+begin_src json
+      {
+        "login": "{login}",
+        "password": "{password}",
+        "new_password": "{new_password}"
+      }
+    #+end_src
+  - Выдает:
+    #+begin_src json
+      "200"
+      {
+        "status": "OK"
+      }
+
+      "400"
+      {
+        "status": "Bad Request",
+        "cause": "Missing required fields."
+      }
+
+      "403"
+      {
+        "status": "Forbidden",
+        "cause": "Invalid credentials."
+      }
+
+      "403"
+      {
+        "status": "Forbidden",
+        "cause": "User with login {login} does not exist."
+      }
+    #+end_src
+  - Комментарий: изменяет пароль пользователя. Требует предоставления текущего логина и пароля. В случае успеха все токены пользователя отзываются, и ему необходимо получить новый токен.
