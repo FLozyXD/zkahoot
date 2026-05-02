@@ -1,8 +1,5 @@
 import hashlib
 
-from src.exceptions import UserNotExistsError
-from typing import Optional
-
 
 class User:
     # Attribute __slots__ is declared and often used in these methods

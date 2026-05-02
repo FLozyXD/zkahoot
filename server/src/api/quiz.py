@@ -47,13 +47,13 @@ class RegisterQuiz(QuizAPI):
         except KeyError:
             abort(400)
 
-    def post(self) -> tuple[dict, int]:
+    def post(self) -> tuple[str, int]:
         with DBWrapper() as dbw:
             try:
                 dbw.insert(self.quiz)
             except UniqueViolation:
                 abort(403)
-        return {"status": "OK"}, 200
+        return "", 200
 
 
 class DeleteQuiz(QuizAPI):
@@ -66,7 +66,7 @@ class DeleteQuiz(QuizAPI):
         except KeyError:
             abort(400)
 
-    def delete(self) -> tuple[dict, int]:
+    def delete(self) -> tuple[str, int]:
         with DBWrapper() as dbw:
             try:
                 quizzes = dbw.select(Quiz, id=self.quiz_id, creator_id=g.user.id)
@@ -79,7 +79,7 @@ class DeleteQuiz(QuizAPI):
                 dbw.delete(quiz)
             except ForeignKeyViolation:
                 abort(400)
-        return {"status": "OK"}, 200
+        return "", 200
 
 
 class ChangeQuiz(QuizAPI):
@@ -94,7 +94,7 @@ class ChangeQuiz(QuizAPI):
         except KeyError:
             abort(400)
 
-    def post(self) -> tuple[dict, int]:
+    def post(self) -> tuple[str, int]:
         with DBWrapper() as dbw:
             try:
                 quizzes = dbw.select(Quiz, id=self.quiz_id, creator_id=g.user.id)
@@ -110,24 +110,26 @@ class ChangeQuiz(QuizAPI):
                 [TextQuestion.from_json(q) for q in self.questions],
             )
             dbw.update(updated_quiz)
-        return {"status": "OK"}, 200
+        return "", 200
 
 
 class SearchQuiz(MethodView):
-    def post(self) -> tuple[dict, int]:
-        body = request.get_json()
-        if not body:
-            abort(400)
+    def get(self) -> tuple[list[dict], int]:
         try:
-            quiz_name = body["quiz_name"]
+            quiz_name = request.args["query"]
         except KeyError:
             abort(400)
-        with DBWrapper() as dbw:
-            quizzes = dbw.select(Quiz, quiz_name=quiz_name)
-            if not quizzes:
-                return {"quizzes": []}, 200
-            quizzes_json = [quiz.to_json() for quiz in quizzes]
-        return {"quizzes": quizzes_json}, 200
+        try:
+            creator_id = request.args["creator_id"]
+        except KeyError:
+            with DBWrapper() as dbw:
+                quizzes = dbw.select(Quiz, quiz_name=quiz_name)
+                quizzes_json = [quiz.to_json() for quiz in quizzes]
+        else:
+            with DBWrapper() as dbw:
+                quizzes = dbw.select(Quiz, quiz_name=quiz_name, creator_id=creator_id)
+                quizzes_json = [quiz.to_json() for quiz in quizzes]
+        return quizzes_json, 200
 
 
 quiz_bp.add_url_rule("/register", view_func=RegisterQuiz.as_view("register_quiz"))

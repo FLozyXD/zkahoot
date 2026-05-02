@@ -12,5 +12,5 @@
 
 ```bash
 cd server/
-gunicorn src.api:create_app()
+gunicorn 'src.api:create_app("config.toml")'
 ```
