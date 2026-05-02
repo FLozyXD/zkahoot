@@ -68,15 +68,3 @@ class Lobby:
         for q in json["quiz"]["questions"]:
             del q["answer"]
         return json
-
-    @staticmethod
-    def from_json(lobby: dict):
-        return Lobby(
-            token=lobby["token"],
-            name=lobby["name"],
-            quiz=Quiz.from_json(lobby["quiz"]),
-            users=[
-                User.from_database(login=p["login"]) for p in lobby["users"]
-            ],
-            owner_id=lobby["owner_id"],
-        )
