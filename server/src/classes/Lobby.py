@@ -58,13 +58,16 @@ class Lobby:
         )
 
     def to_json(self) -> dict:
-        return {
+        json = {
             "token": self.token,
             "name": self.name,
             "owner_id": self.owner_id,
             "users": [p.to_json()["login"] for p in self.users],
             "quiz": self.quiz.to_json(),
         }
+        for q in json["quiz"]["questions"]:
+            del q["answer"]
+        return json
 
     @staticmethod
     def from_json(lobby: dict):
