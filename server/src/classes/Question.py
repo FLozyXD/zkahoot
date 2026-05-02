@@ -22,20 +22,20 @@ class AbstractQuestion(ABC):
     def from_json(question: dict): ...
 
 
-class Question(AbstractQuestion):
+class TextQuestion(AbstractQuestion):
+    question_type = "text"
+
     def __init__(
         self,
         id: int | None,
         quiz_id: int,
         question: str,
         answer: Answer,
-        kind: str,
     ) -> None:
         self.id = id
         self.quiz_id = quiz_id
         self.question = question
         self.answer = answer
-        self.kind = kind
 
     def __str__(self) -> str:
         return self.question
@@ -49,7 +49,7 @@ class Question(AbstractQuestion):
                 self.id,
                 self.quiz_id,
                 self.question,
-                self.kind,
+                self.question_type,
                 self.answer.id,
             ]
         )
@@ -60,15 +60,14 @@ class Question(AbstractQuestion):
             "question": self.question,
             "quiz_id": self.quiz_id,
             "answer": self.answer.to_json(),
-            "kind": self.kind,
+            "question_type": self.question_type,
         }
 
     @staticmethod
     def from_json(question: dict) -> AbstractQuestion:
-        return Question(
+        return TextQuestion(
             question["id"],
             question["quiz_id"],
             question["question"],
             Answer.from_json(question["answer"]),
-            question["kind"],
         )

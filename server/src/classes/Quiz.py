@@ -1,4 +1,4 @@
-from src.classes.Question import Question
+from src.classes.Question import TextQuestion
 from src.classes.Answer import Answer
 
 
@@ -8,7 +8,7 @@ class Quiz:
         id: int | None,
         quiz_name: str,
         creator_id: int | None,
-        questions: list[Question] = [],
+        questions: list[TextQuestion] = [],
     ) -> None:
         self.id = id
         self.quiz_name = quiz_name
@@ -50,5 +50,5 @@ class Quiz:
             quiz["id"],
             quiz["quiz_name"],
             quiz["creator_id"],
-            questions=[Question.from_json(q) for q in quiz["questions"]],
+            questions=[TextQuestion.from_json(q) for q in quiz["questions"]],
         )

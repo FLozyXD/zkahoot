@@ -1,4 +1,4 @@
-from src.classes import Answer, Question, User, Quiz
+from src.classes import Answer, TextQuestion, User, Quiz
 
 from typing import Iterable, Self
 import psycopg2
@@ -51,7 +51,7 @@ class DBWrapper:
         self._insert_answer(obj.answer)
         self._insert_obj_setting_id(
             """INSERT INTO questions
-            (quiz_id, question, kind, answer_id)
+            (quiz_id, question, question_type, answer_id)
             VALUES (%s, %s, %s, %s)""",
             obj,
         )
@@ -94,11 +94,11 @@ class DBWrapper:
 
     def _update_question(self, obj) -> None:
         self._update_answer(obj.answer)
-        obj_t = (obj.question, obj.kind, obj.id)
+        obj_t = (obj.question, obj.question_type, obj.id)
         self.cur.execute(
             """UPDATE questions
             SET question = %s,
-            kind = %s
+            question_type = %s
             WHERE id = %s""",
             obj_t,
         )
@@ -126,7 +126,7 @@ class DBWrapper:
         questions = []
         for obj_t in self._select_from_table("questions", **query):
             answer = self._select_answer(id=obj_t[4])[0]
-            question = Question(obj_t[0], obj_t[1], obj_t[2], answer, obj_t[3])
+            question = TextQuestion(obj_t[0], obj_t[1], obj_t[2], answer)
             questions.append(question)
         return questions
 
@@ -154,11 +154,11 @@ class DBWrapper:
         self.cur.close()
         self.conn.close()
 
-    def insert(self, obj: Answer | Question | User | Quiz) -> None:
+    def insert(self, obj: Answer | TextQuestion | User | Quiz) -> None:
         match obj.__class__.__name__:
             case "Answer":
                 self._insert_answer(obj)
-            case "Question":
+            case "TextQuestion":
                 self._insert_question(obj)
             case "User":
                 self._insert_user(obj)
@@ -167,11 +167,11 @@ class DBWrapper:
             case _:
                 raise TypeError("Invalid class!")
 
-    def delete(self, obj: Answer | Question | User | Quiz) -> None:
+    def delete(self, obj: Answer | TextQuestion | User | Quiz) -> None:
         match obj.__class__.__name__:
             case "Answer":
                 self._delete_answer(obj)
-            case "Question":
+            case "TextQuestion":
                 self._delete_question(obj)
             case "User":
                 self._delete_user(obj)
@@ -180,11 +180,11 @@ class DBWrapper:
             case _:
                 raise TypeError("Invalid class!")
 
-    def update(self, obj: Answer | Question | User | Quiz) -> None:
+    def update(self, obj: Answer | TextQuestion | User | Quiz) -> None:
         match obj.__class__.__name__:
             case "Answer":
                 self._update_answer(obj)
-            case "Question":
+            case "TextQuestion":
                 self._update_question(obj)
             case "User":
                 self._update_user(obj)
@@ -194,12 +194,12 @@ class DBWrapper:
                 raise TypeError("Invalid class!")
 
     def select(
-        self, cls: Answer | Question | User | Quiz, **query
-    ) -> list[Answer | Question | User | Quiz]:
+        self, cls: Answer | TextQuestion | User | Quiz, **query
+    ) -> list[Answer | TextQuestion | User | Quiz]:
         match cls.__name__:
             case "Answer":
                 return self._select_answer(**query)
-            case "Question":
+            case "TextQuestion":
                 return self._select_question(**query)
             case "User":
                 return self._select_user(**query)
