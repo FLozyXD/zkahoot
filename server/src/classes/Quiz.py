@@ -1,4 +1,4 @@
-from src.classes.Question import TextQuestion
+from src.classes.Question import Question
 from src.classes.Answer import Answer
 
 
@@ -8,7 +8,7 @@ class Quiz:
         id: int | None,
         quiz_name: str,
         creator_id: int | None,
-        questions: list[TextQuestion] = [],
+        questions: list[Question] = [],
     ) -> None:
         self.id = id
         self.quiz_name = quiz_name
@@ -31,13 +31,9 @@ class Quiz:
         )
 
     def check(self, answers: list[Answer]) -> list[bool]:
-        return [
-            self.questions[i].answer == answers[i] for i in range(len(answers))
-        ]
+        return [self.questions[i].answer == answers[i] for i in range(len(answers))]
 
-    def immediate_check(
-        self, answer: Answer, question_index: int
-    ) -> bool:  # whynot
+    def immediate_check(self, answer: Answer, question_index: int) -> bool:  # whynot
         return self.questions[question_index].answer == answer
 
     def to_json(self) -> dict:
@@ -54,5 +50,5 @@ class Quiz:
             quiz["id"],
             quiz["quiz_name"],
             quiz["creator_id"],
-            questions=[TextQuestion.from_json(q) for q in quiz["questions"]],
+            questions=[Question.from_json(q) for q in quiz["questions"]],
         )

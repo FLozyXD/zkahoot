@@ -36,16 +36,12 @@ class AuthTest(unittest.TestCase):
 
     def test_token(self):
         self.client.post("/api/auth/register", json=self.valid_user)
-        response = self.client.post(
-            "/api/auth/get-token", json=self.valid_user
-        )
+        response = self.client.post("/api/auth/get-token", json=self.valid_user)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json["status"], "OK")
         self.assertIn("token", response.json)
 
-        response = self.client.post(
-            "/api/auth/get-token", json=self.invalid_user
-        )
+        response = self.client.post("/api/auth/get-token", json=self.invalid_user)
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.json["status"], "Forbidden")
         self.assertNotIn("token", response.json)

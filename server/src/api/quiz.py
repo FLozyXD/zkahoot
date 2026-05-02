@@ -3,7 +3,7 @@ from flask.views import MethodView
 from psycopg2.errors import UniqueViolation, ForeignKeyViolation
 from werkzeug.datastructures import ImmutableDict
 
-from src.classes import Quiz, TextQuestion
+from src.classes import Quiz, Question
 from src.utils import DBWrapper
 from src.api.auth import Authorizer
 
@@ -89,7 +89,7 @@ class ChangeQuiz(QuizAPI):
                 existing_quiz.id,
                 self.quiz_name,
                 existing_quiz.creator_id,
-                [TextQuestion.from_json(q) for q in self.questions],
+                [Question.from_json(q) for q in self.questions],
             )
             dbw.update(updated_quiz)
         return "", 200

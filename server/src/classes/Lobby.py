@@ -75,8 +75,6 @@ class Lobby:
             token=lobby["token"],
             name=lobby["name"],
             quiz=Quiz.from_json(lobby["quiz"]),
-            users=[
-                User.from_database(login=p["login"]) for p in lobby["users"]
-            ],
+            users=[User.from_database(login=p["login"]) for p in lobby["users"]],
             owner_id=lobby["owner_id"],
         )

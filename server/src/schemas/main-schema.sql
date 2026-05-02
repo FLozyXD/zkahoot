@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS Questions (
     Id SERIAL PRIMARY KEY,
     Quiz_Id INT REFERENCES Quizzes (Id),
     Question VARCHAR(512) NOT NULL,
-    Question_Type VARCHAR(32) NOT NULL DEFAULT 'prompt',
-    Answer_Id INT REFERENCES Answers (Id),
-    Type_Dependent VARCHAR(512)
+    Kind VARCHAR(32) NOT NULL DEFAULT 'prompt',
+    Answer_Id INT REFERENCES Answers (Id)
 );
