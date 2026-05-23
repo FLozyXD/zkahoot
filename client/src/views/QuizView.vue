@@ -66,12 +66,12 @@ const newQuiz = ref({
 // Запрос списка квизов
 const fetchQuizzes = async () => {
   try {
-    const response = await api.post('/quiz/search', {
-      quiz_name: searchQuery.value, // Передаем параметр ссылки
+    const response = await api.get('/quiz/search', {
+      params: { query: searchQuery.value },
     })
-    quizzes.value = response.data.quizzes
+    quizzes.value = response.data
   } catch (error) {
-    console.error('Ошибка при загрузке квизов:', error)
+    console.error('Ошибка при поиске квизов:', error)
   }
 }
 
