@@ -13,7 +13,7 @@ export const useAuthStore = defineStore('auth', {
     async login(login, password) {
       try {
         const response = await api.post('/auth/get-token', { login, password })
-        if (response.data.status === 'OK') {
+        if (response.data.token) {
           this.token = response.data.token
           localStorage.setItem('auth_token', this.token)
           this.authError = null
@@ -27,7 +27,7 @@ export const useAuthStore = defineStore('auth', {
     async register(login, password) {
       try {
         const response = await api.post('/auth/register', { login, password })
-        if (response.data.status === 'OK') {
+        if (response.status === 200) {
           return await this.login(login, password)
         }
       } catch (error) {
