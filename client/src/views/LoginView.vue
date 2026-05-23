@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1>Добро пожаловать в Quiz App</h1>
-    
+
     <div v-if="authStore.authError">
       <p>Ошибка: {{ authStore.authError }}</p>
     </div>
@@ -37,27 +37,27 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useAuthStore } from '../stores/auth';
-import { useRouter } from 'vue-router';
+import { ref } from 'vue'
+import { useAuthStore } from '../stores/auth'
+import { useRouter } from 'vue-router'
 
-const authStore = useAuthStore();
-const router = useRouter();
+const authStore = useAuthStore()
+const router = useRouter()
 
-const loginForm = ref({ login: '', password: '' });
-const registerForm = ref({ login: '', password: '' });
+const loginForm = ref({ login: '', password: '' })
+const registerForm = ref({ login: '', password: '' })
 
 const onLogin = async () => {
-  const success = await authStore.login(loginForm.value.login, loginForm.value.password);
+  const success = await authStore.login(loginForm.value.login, loginForm.value.password)
   if (success) {
-    router.push('/');
+    router.push('/')
   }
-};
+}
 
 const onRegister = async () => {
-  const success = await authStore.register(registerForm.value.login, registerForm.value.password);
+  const success = await authStore.register(registerForm.value.login, registerForm.value.password)
   if (success) {
-    router.push('/');
+    router.push('/')
   }
-};
+}
 </script>
