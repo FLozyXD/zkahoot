@@ -3,7 +3,8 @@
     <!-- Навигация видна только авторизованным пользователям -->
     <nav v-if="authStore.isAuthenticated">
       <router-link to="/">Главная</router-link> | <router-link to="/quiz">Квизы</router-link> |
-      <router-link to="/lobbies">Лобби</router-link> | <button @click="onLogout">Выйти</button>
+      <router-link to="/lobbies">Лобби</router-link> | <span>{{ authStore.username }}</span> &nbsp;
+      <button @click="onLogout">Выйти</button>
     </nav>
     <hr v-if="authStore.isAuthenticated" />
 
