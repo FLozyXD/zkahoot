@@ -1,11 +1,9 @@
-from src.utils import DBWrapper, LobbyDictMgr
-from src.classes import Quiz, Answer
-from src.api.auth import Authorizer
-from src.exceptions import LobbyNotExistsError
-
-from flask import Blueprint, request, abort, g
+from flask import Blueprint, abort, g, request
 from flask.views import MethodView
-from time import sleep
+from src.api.auth import Authorizer
+from src.classes import Answer, Quiz
+from src.exceptions import LobbyNotExistsError
+from src.utils import DBWrapper, LobbyDictMgr
 
 lobby_bp = Blueprint("lobby", __name__, url_prefix="/lobby")
 lobby_bp.before_request(Authorizer.require_token)
@@ -112,10 +110,9 @@ class PollRunningLobbyAPI(LobbyAPI):
                 lobby = lobby_mgr.select_by_token(token)
             except LobbyNotExistsError:
                 abort(404)
-        while True:
-            if lobby.running:
-                return "", 200
-            sleep(3)
+        if lobby.running:
+            return "", 200
+        return "", 202
 
 
 class CompareLobbyAPI(InnerLobbyAPI):
@@ -154,8 +151,7 @@ class SearchLobbyAPI(LobbyAPI):
     def get(self) -> tuple[list[dict], int]:
         with self.lobby_mgr_cls() as lobby_mgr:
             return [
-                lobby.to_json()
-                for lobby in lobby_mgr.select_by_name(self.query)
+                lobby.to_json() for lobby in lobby_mgr.select_by_name(self.query)
             ], 200
 
 

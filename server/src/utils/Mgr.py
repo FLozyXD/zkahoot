@@ -1,13 +1,13 @@
-from src.classes import User, Lobby, Quiz
-from src.utils import DBWrapper, UnifiedDict
-from src.exceptions import LobbyNotExistsError
-
-from typing import Self, Iterable
-from sqlite3 import connect, IntegrityError
 from abc import ABC, abstractmethod
+from contextlib import suppress
 from pathlib import Path
 from secrets import token_hex
-from contextlib import suppress
+from sqlite3 import IntegrityError, connect
+from typing import Iterable, Self
+
+from src.classes import Lobby, Quiz, User
+from src.exceptions import LobbyNotExistsError
+from src.utils import DBWrapper, UnifiedDict
 
 
 class AbstractLobbyMgr(ABC):
@@ -124,9 +124,7 @@ class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
         self.cur.execute("delete from lobbies where token = ?", (token,))
 
     def select_by_token(self, token: str) -> Lobby:
-        lobby_rec = self.cur.execute(
-            "select * from lobbies where token = ?", (token,)
-        )
+        lobby_rec = self.cur.execute("select * from lobbies where token = ?", (token,))
         lobby_t = lobby_rec.fetchone()
         if not lobby_t:
             raise LobbyNotExistsError(token)
@@ -167,9 +165,7 @@ class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
             "delete from lobbies_users where token = ? and login = ?",
             (token, user.login),
         )
-        ul = self.cur.execute(
-            "select from lobbies_users where token = ?", (token,)
-        )
+        ul = self.cur.execute("select from lobbies_users where token = ?", (token,))
         if not ul.fetchone():
             self.cur.execute("delete from lobbies where token = ?", (token,))
 
@@ -220,9 +216,7 @@ class LobbyDictMgr(AbstractLobbyMgr):
         return lobby
 
     def select_by_name(self, name: str) -> Iterable[Lobby]:
-        lobbies = [
-            lobby for lobby in self.token_lobby.values() if name in lobby.name
-        ]
+        lobbies = [lobby for lobby in self.token_lobby.values() if name in lobby.name]
         return lobbies
 
     def join(self, token: str, user: User) -> None:
@@ -231,6 +225,7 @@ class LobbyDictMgr(AbstractLobbyMgr):
         except KeyError:
             raise LobbyNotExistsError(token)
         lobby.join(user)
+        self.user_lobby[user.login] = lobby
 
     def kick(self, user: User) -> None:
         with suppress(KeyError):
