@@ -3,42 +3,33 @@
     <h1>Создание лобби</h1>
 
     <form @submit.prevent="createLobby">
-      <div style="margin-bottom: 10px">
-        <label>Название лобби: </label>
-        <input v-model="name" required />
-      </div>
-
-      <div style="margin-bottom: 20px">
-        <h3>Выберите квиз</h3>
-        <div style="margin-bottom: 10px">
-          <input v-model="quizSearchQuery" placeholder="Поиск квиза..." />
+      <div>
+        <input v-model="name" placeholder="Название лобби" required />
+        <div class="choose-quiz-field">
+          <input v-model="quizSearchQuery" placeholder="Название квиза" />
           <button type="button" @click="fetchQuizzes">Найти</button>
         </div>
 
         <div
           v-if="quizzes.length > 0"
-          style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px"
         >
-          <div
-            v-for="quiz in quizzes"
-            :key="quiz.id"
-            @click="selectedQuizId = quiz.id"
-            :style="{
-              padding: '5px',
-              cursor: 'pointer',
-              backgroundColor: selectedQuizId === quiz.id ? '#e0e0e0' : 'transparent',
-            }"
-          >
-            {{ quiz.quiz_name }} ({{ quiz.questions.length }} вопр.)
-          </div>
+          <ul v-for="quiz in quizzes"
+              class="quizzes"
+              :key="quiz.id"
+              @click="selectedQuizId = quiz.id" >
+            <li>
+              {{ quiz.quiz_name }} ({{ quiz.questions.length }} вопр.)
+              <span v-if="selectedQuizId === quiz.id">(Выбран)</span>
+            </li>
+          </ul>
         </div>
-        <p v-else>Квизы не найдены. Пожалуйста, создайте квиз на странице "Квизы".</p>
+        <p v-else class="not-found">Квиз не найден!</p>
       </div>
 
-      <button type="submit" :disabled="!selectedQuizId || !name">Создать</button>
-      <button type="button" @click="$router.push('/lobbies')" style="margin-left: 10px">
-        Отмена
-      </button>
+      <div class="control-buttons">
+        <button type="submit" :disabled="!selectedQuizId || !name">Создать</button>
+        <button class="back" type="button" @click="$router.push('/lobbies')" style="margin-left: 10px">К списку лобби</button>
+      </div>
     </form>
   </div>
 </template>
@@ -79,3 +70,25 @@ onMounted(() => {
   fetchQuizzes()
 })
 </script>
+
+<style scoped>
+  .choose-quiz-field, .control-buttons {
+    display: flex;
+    gap: 16px;
+  }
+  .choose-quiz-field, span, ul {
+    margin: 0;
+  }
+  .choose-quiz-field > * {
+    margin-bottom: 0;
+  }
+  .control-buttons > .back {
+    width: 30%;
+  }
+  .not-found, li {
+    margin: 32px 0;
+  }
+  li {
+    cursor: pointer;
+  }
+</style>

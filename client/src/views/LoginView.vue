@@ -1,36 +1,36 @@
 <template>
   <div>
-    <h1>Добро пожаловать в Quiz App</h1>
+    <h1>Добро пожаловать в zkahoot</h1>
 
     <div v-if="authStore.authError">
-      <p>Ошибка: {{ authStore.authError }}</p>
+      <p>{{ authStore.authError }}</p>
     </div>
 
     <form @submit.prevent="onLogin">
-      <h2>Вход</h2>
-      <div>
-        <label>Логин:</label>
-        <input v-model="loginForm.login" type="text" required />
-      </div>
-      <div>
-        <label>Пароль:</label>
-        <input v-model="loginForm.password" type="password" required />
-      </div>
+      <h3>Вход</h3>
+      <input v-model="loginForm.login"
+             type="text"
+             placeholder="Логин"
+             required />
+      <input v-model="loginForm.password"
+             type="password"
+             placeholder="Пароль"
+             required />
       <button type="submit">Войти</button>
     </form>
 
     <hr />
 
     <form @submit.prevent="onRegister">
-      <h2>Регистрация</h2>
-      <div>
-        <label>Новый логин:</label>
-        <input v-model="registerForm.login" type="text" required />
-      </div>
-      <div>
-        <label>Новый пароль:</label>
-        <input v-model="registerForm.password" type="password" required />
-      </div>
+      <h3>Регистрация</h3>
+      <input v-model="registerForm.login"
+             type="text"
+             placeholder="Новый логин"
+             required />
+      <input v-model="registerForm.password"
+             type="password"
+             placeholder="Новый пароль"
+             required />
       <button type="submit">Зарегистрироваться</button>
     </form>
   </div>
@@ -65,3 +65,9 @@ const onRegister = async () => {
   }
 }
 </script>
+
+<style scoped>
+  div > h1 {
+    margin: 32px 0;
+  }
+</style>

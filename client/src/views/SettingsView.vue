@@ -1,37 +1,39 @@
 <template>
-  <h1>Настройки аккаунта</h1>
+  <div>
+    <h1>Настройки аккаунта</h1>
 
-  <div v-if="status_ || authStore.authError">
-    <p>{{ status_ || authStore.authError }}</p>
+    <div v-if="status_ || authStore.authError">
+      <p>{{ status_ || authStore.authError }}</p>
+    </div>
+
+    <form @submit.prevent="changeLogin">
+      <h3>Изменить логин</h3>
+      <input v-model="changeLoginForm.new_login"
+             type="text"
+             placeholder="Новый логин"
+             required /><br />
+      <input v-model="changeLoginForm.password"
+             type="password"
+             placeholder="Пароль"
+             required /><br />
+      <button type="submit">Применить</button>
+    </form>
+
+    <hr />
+
+    <form @submit.prevent="changePass">
+      <h3>Изменить пароль</h3>
+      <input v-model="changePassForm.password"
+             type="password"
+             placeholder="Старый пароль"
+             required /><br />
+      <input v-model="changePassForm.new_password"
+             type="password"
+             placeholder="Новый пароль"
+             required /><br />
+      <button type="submit">Применить</button>
+    </form>
   </div>
-
-  <form @submit.prevent="changeLogin">
-    <h2>Изменить логин</h2>
-    <input v-model="changeLoginForm.new_login"
-           type="text"
-           placeholder="Новый логин"
-           required /><br />
-    <input v-model="changeLoginForm.password"
-           type="password"
-           placeholder="Пароль"
-           required /><br />
-    <button type="submit">Применить</button>
-  </form>
-
-  <hr />
-
-  <form @submit.prevent="changePass">
-    <h2>Изменить пароль</h2>
-    <input v-model="changePassForm.password"
-           type="password"
-           placeholder="Старый пароль"
-           required /><br />
-    <input v-model="changePassForm.new_password"
-           type="password"
-           placeholder="Новый пароль"
-           required /><br />
-    <button type="submit">Применить</button>
-  </form>
 </template>
 
 <script setup>

@@ -2,35 +2,37 @@
   <div>
     <h1>Список лобби</h1>
 
-    <div style="margin-bottom: 20px;">
+    <div class="create">
       <router-link to="/lobbies/create">
         <button>Создать лобби</button>
       </router-link>
     </div>
 
-    <section style="margin-bottom: 20px; border: 1px solid #ccc; padding: 10px;">
+    <section>
       <h3>Присоединиться по коду</h3>
-      <input v-model="joinToken" placeholder="Код лобби" />
-      <button @click="joinByToken">Присоединиться</button>
-      <p v-if="joinError" style="color: red;">{{ joinError }}</p>
+      <div>
+        <input v-model="joinToken" placeholder="Код лобби" />
+        <button @click="joinByToken">Присоединиться</button>
+      </div>
+      <p v-if="joinError" class="color-red">{{ joinError }}</p>
     </section>
 
-    <section>
+    <section class="lobbies">
       <h3>Доступные лобби</h3>
-      <div style="margin-bottom: 10px;">
+      <div>
         <input v-model="searchQuery" placeholder="Поиск по названию..." />
         <button @click="fetchLobbies">Найти</button>
       </div>
 
       <ul v-if="lobbies.length > 0">
-        <li v-for="lobby in lobbies" :key="lobby.token" style="margin-bottom: 10px;">
+        <li v-for="lobby in lobbies" :key="lobby.token">
           <strong>{{ lobby.name }}</strong> (Квиз: {{ lobby.quiz.quiz_name }})
           <br />
           Игроков: {{ lobby.users.length }}
           <button @click="joinLobby(lobby.token)" style="margin-left: 10px;">Войти</button>
         </li>
       </ul>
-      <p v-else>Лобби не найдены.</p>
+      <p v-else>Лобби не найдены</p>
     </section>
   </div>
 </template>
@@ -81,3 +83,20 @@ onMounted(() => {
   fetchLobbies();
 });
 </script>
+
+<style scoped>
+  .create {
+    margin: 32px 0;
+  }
+  section > div {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+  }
+  section > div > input {
+    margin-bottom: 0;
+  }
+  .lobbies > ul, .lobbies p {
+    margin-top: 16px;
+  }
+</style>

@@ -4,26 +4,27 @@
 
     <!-- Блок создания нового квиза -->
     <section>
-      <h2>Создать новый квиз</h2>
+      <h3>Создать новый квиз</h3>
       <form @submit.prevent="submitCreateQuiz">
-        <div>
-          <label>Название квиза: </label>
-          <input v-model="newQuiz.name" type="text" required />
-        </div>
+        <input v-model="newQuiz.name"
+               type="text"
+               placeholder="Название квиза"
+               required />
 
-        <h3>Вопросы</h3>
         <div v-for="(q, index) in newQuiz.questions" :key="index" style="margin-bottom: 10px">
-          <span>{{ index + 1 }}. </span>
-          <input v-model="q.text" placeholder="Текст вопроса" required />
-          <input v-model="q.answer" placeholder="Правильный ответ" required />
-          <button type="button" @click="removeQuestion(index)" v-if="newQuiz.questions.length > 1">
-            Удалить вопрос
-          </button>
+          <div class="question-field">
+            <span>{{ index + 1 }}</span>
+            <input v-model="q.text" placeholder="Текст вопроса" required />
+            <input v-model="q.answer" placeholder="Правильный ответ" required />
+            <button type="button" @click="removeQuestion(index)" v-if="newQuiz.questions.length > 1">
+              Удалить
+            </button>
+          </div>
         </div>
-
-        <button type="button" @click="addQuestion">Добавить еще вопрос</button>
-        <br /><br />
-        <button type="submit">Сохранить квиз</button>
+        <div class="quiz-control-buttons">
+          <button class="new" type="button" @click="addQuestion">Добавить еще вопрос</button>
+          <button type="submit">Сохранить квиз</button>
+        </div>
       </form>
     </section>
 
@@ -31,11 +32,11 @@
 
     <!-- Блок списка квизов -->
     <section>
-      <h2>Список квизов</h2>
+      <h3>Список квизов</h3>
 
       <!-- Поиск (по доке query обязателен, иначе 400 ошибка) -->
-      <div>
-        <input v-model="searchQuery" placeholder="Поиск по названию..." />
+      <div class="search-field">
+        <input v-model="searchQuery" placeholder="Поиск по названию" />
         <button @click="fetchQuizzes">Найти</button>
       </div>
 
@@ -113,3 +114,37 @@ onMounted(() => {
   fetchQuizzes()
 })
 </script>
+
+<style scoped>
+  form input {
+    margin-bottom: 8px;
+  }
+  .question-field {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .question-field > input, .question-field > button, .search-field input {
+    margin-bottom: 0;
+  }
+  .question-field > button {
+    width: 20%;
+  }
+  .quiz-control-buttons {
+    display: flex;
+    gap: 16px;
+  }
+  .quiz-control-buttons > .new {
+    width: 30%;
+  }
+  .search-field {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  ul button {
+    margin-left: 16px;
+  }
+</style>
