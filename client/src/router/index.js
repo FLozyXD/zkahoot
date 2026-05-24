@@ -5,6 +5,7 @@ import QuizView from '../views/QuizView.vue'
 import LobbyListView from '../views/LobbyListView.vue'
 import CreateLobbyView from '../views/CreateLobbyView.vue'
 import LobbyDetailView from '../views/LobbyDetailView.vue'
+import SettingsView from '../views/SettingsView.vue'
 import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
@@ -44,6 +45,12 @@ const router = createRouter({
       path: '/lobbies/:token',
       name: 'lobby-detail',
       component: LobbyDetailView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/settings',
+      name: 'user-settings',
+      component: SettingsView,
       meta: { requiresAuth: true },
     },
   ],
