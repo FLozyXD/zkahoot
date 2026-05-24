@@ -2,9 +2,8 @@
   <div>
     <!-- Навигация видна только авторизованным пользователям -->
     <nav v-if="authStore.isAuthenticated">
-      <router-link to="/">Главная</router-link> | 
-      <router-link to="/quiz">Квизы</router-link> |
-      <button @click="onLogout">Выйти</button>
+      <router-link to="/">Главная</router-link> | <router-link to="/quiz">Квизы</router-link> |
+      <router-link to="/lobbies">Лобби</router-link> | <button @click="onLogout">Выйти</button>
     </nav>
     <hr v-if="authStore.isAuthenticated" />
 
@@ -13,14 +12,14 @@
 </template>
 
 <script setup>
-import { useAuthStore } from './stores/auth';
-import { useRouter } from 'vue-router';
+import { useAuthStore } from './stores/auth'
+import { useRouter } from 'vue-router'
 
-const authStore = useAuthStore();
-const router = useRouter();
+const authStore = useAuthStore()
+const router = useRouter()
 
 const onLogout = () => {
-  authStore.logout();
-  router.push('/login');
-};
+  authStore.logout()
+  router.push('/login')
+}
 </script>
