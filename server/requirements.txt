@@ -14,3 +14,4 @@ psycopg2-pool==1.2
 Werkzeug==3.1.6
 zope.event==6.1
 zope.interface==8.2
+pytest==9.0.3
