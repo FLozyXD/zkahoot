@@ -37,12 +37,16 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
 const router = useRouter()
+
+onMounted(() => {
+  authStore.authError = null
+})
 
 const loginForm = ref({ login: '', password: '' })
 const registerForm = ref({ login: '', password: '' })

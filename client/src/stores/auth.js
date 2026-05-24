@@ -4,7 +4,7 @@ import api from '../api/index.js'
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem('auth_token') || null,
-    login: localStorage.getItem('user_login') || null,
+    username: localStorage.getItem('user_login') || null,
     authError: null,
   }),
   getters: {
@@ -16,9 +16,9 @@ export const useAuthStore = defineStore('auth', {
         const response = await api.post('/auth/get-token', { login, password })
         if (response.data.token) {
           this.token = response.data.token
-          this.login = login
+          this.username = login
           localStorage.setItem('auth_token', this.token)
-          localStorage.setItem('user_login', this.login)
+          localStorage.setItem('user_login', this.username)
           this.authError = null
           return true
         }
@@ -40,7 +40,7 @@ export const useAuthStore = defineStore('auth', {
     },
     async logout() {
       this.token = null
-      this.login = null
+      this.username = null
       this.authError = null
       localStorage.removeItem('auth_token')
       localStorage.removeItem('user_login')
