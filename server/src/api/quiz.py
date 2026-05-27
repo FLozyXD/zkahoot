@@ -109,13 +109,47 @@ class ChangeQuiz(QuizAPI):
                 existing_quiz = quizzes[0]
             except IndexError:
                 abort(404)
+
+            if not self.questions:
+                abort(400)
+
+            existing_questions = {
+                question.id: question for question in existing_quiz.questions
+            }
+            resolved_questions = []
+
+            try:
+                for question in self.questions:
+                    question = dict(question)
+                    answer = dict(question["answer"])
+                    question_id = question["id"]
+
+                    if question_id is None:
+                        answer["id"] = None
+                    elif question_id in existing_questions:
+                        answer["id"] = existing_questions[
+                            question_id
+                        ].answer.id
+                    else:
+                        abort(400)
+
+                    question["quiz_id"] = existing_quiz.id
+                    question["answer"] = answer
+                    question.setdefault("type_dependent", None)
+                    resolved_questions.append(question)
+            except KeyError:
+                abort(400)
+
             updated_quiz = Quiz(
                 existing_quiz.id,
                 self.quiz_name,
                 existing_quiz.creator_id,
-                [TextQuestion.from_json(q) for q in self.questions],
+                [TextQuestion.from_json(q) for q in resolved_questions],
             )
-            dbw.update(updated_quiz)
+            try:
+                dbw.update(updated_quiz)
+            except UniqueViolation:
+                abort(403)
         return "", 200
 
 
