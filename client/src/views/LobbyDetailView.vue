@@ -36,7 +36,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { lobbyApi } from '../api/lobby'
 import { useAuthStore } from '../stores/auth'
 
@@ -50,6 +50,7 @@ const starting = ref(false)
 const statusMessage = ref('')
 const gameStarted = ref(false)
 let infoInterval = null
+let hasLeftLobby = false
 
 const fetchInfo = async () => {
   try {
@@ -84,12 +85,24 @@ const startGame = async () => {
 }
 
 const leaveLobby = async () => {
+  hasLeftLobby = true
   try {
     await lobbyApi.exit()
     router.push('/lobbies')
   } catch (error) {
     console.error('Ошибка при выходе:', error)
     router.push('/lobbies')
+  }
+}
+
+const exitLobbyOnLeave = async () => {
+  if (hasLeftLobby || !lobby.value || !authStore.isAuthenticated) return
+
+  hasLeftLobby = true
+  try {
+    await lobbyApi.exit()
+  } catch (error) {
+    console.error('Ошибка при автоматическом выходе из лобби:', error)
   }
 }
 
@@ -122,5 +135,10 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (infoInterval) clearInterval(infoInterval)
+})
+
+onBeforeRouteLeave(async () => {
+  if (infoInterval) clearInterval(infoInterval)
+  await exitLobbyOnLeave()
 })
 </script>

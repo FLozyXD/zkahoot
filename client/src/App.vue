@@ -19,11 +19,20 @@
 <script setup>
 import { useAuthStore } from './stores/auth'
 import { useRouter } from 'vue-router'
+import { lobbyApi } from './api/lobby'
 
 const authStore = useAuthStore()
 const router = useRouter()
 
-const onLogout = () => {
+const onLogout = async () => {
+  if (router.currentRoute.value.name === 'lobby-detail') {
+    try {
+      await lobbyApi.exit()
+    } catch (error) {
+      console.error('Ошибка при выходе из лобби перед logout:', error)
+    }
+  }
+
   authStore.logout()
   router.push('/login')
 }
