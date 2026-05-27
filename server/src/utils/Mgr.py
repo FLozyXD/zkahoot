@@ -48,21 +48,39 @@ class AbstractLobbyMgr(ABC):
     def kick(self, token: str, user: User) -> None: ...
 
 
+class AbstractSessionMgr(ABC):
+    @abstractmethod
+    def __enter__(self) -> Self: ...
+
+    @abstractmethod
+    def __exit__(self, *args, **kwargs) -> None: ...
+
+    @property
+    @abstractmethod
+    def nbytes(self) -> int: ...
+
+    @abstractmethod
+    def authorize(self, user: User) -> str: ...
+
+
 class DBMgr:
     nbytes = 4
-    default_path = Path(f"helper_dbs/{token_hex(nbytes)}.sqlite3")
+    default_path = ":memory:"
+    conn = None
 
-    def __init__(self, path: Path | None = None) -> None:
-        database = path if path else self.default_path
-        self.conn = connect(database)
-        self.cur = self.conn.cursor()
+    @classmethod
+    def __init__(cls, path: Path | None = None) -> None:
+        database = path if path else cls.default_path
+        if not cls.conn:
+            cls.conn = connect(database)
+        cls.cur = cls.conn.cursor()
 
     def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *args, **kwargs) -> None:
         self.cur.close()
-        self.conn.close()
+        self.commit()
 
     def commit(self) -> None:
         self.conn.commit()
@@ -71,9 +89,7 @@ class DBMgr:
         self.conn.rollback()
 
 
-class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
-    default_path = Path("helper_dbs/lobbies.sqlite3")
-
+class LobbyDBMgr(DBMgr):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         with open(Path("src/schemas/lobbies-schema.sql")) as script:
@@ -110,11 +126,11 @@ class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
             quiz,
         )
         self.cur.execute(
-            "insert into lobbies (?, ?, ?, ?)",
+            "insert into lobbies values (?, ?, ?, ?, ?)",
             tuple(lobby),
         )
         self.cur.execute(
-            "insert into lobbies_users (?, ?)",
+            "insert into lobbies_users values (?, ?)",
             (lobby.token, user.login),
         )
         return lobby
@@ -162,16 +178,19 @@ class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
         except IntegrityError:
             raise LobbyNotExistsError(token)
 
-    def kick(self, token: str, user: User) -> None:
+    def kick(self, user: User) -> None:
+        lobby = self.select_by_user(user)
         self.cur.execute(
             "delete from lobbies_users where token = ? and login = ?",
-            (token, user.login),
+            (lobby.token, user.login),
         )
         ul = self.cur.execute(
-            "select from lobbies_users where token = ?", (token,)
+            "select * from lobbies_users where token = ?", (lobby.token,)
         )
         if not ul.fetchone():
-            self.cur.execute("delete from lobbies where token = ?", (token,))
+            self.cur.execute(
+                "delete from lobbies where token = ?", (lobby.token,)
+            )
 
 
 class LobbyDictMgr(AbstractLobbyMgr):
@@ -239,3 +258,13 @@ class LobbyDictMgr(AbstractLobbyMgr):
             del self.user_lobby[user.login]
             if not lobby.users:
                 del self.token_lobby[lobby.token]
+
+
+class SessionDBMgr(DBMgr):
+    nbytes = 32
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        with open(Path("src/schemas/sessions-schema.sql")) as script:
+            sql = script.read()
+        self.cur.executescript(sql)
