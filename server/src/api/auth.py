@@ -169,18 +169,10 @@ class Authorizer:
 
 
 auth_bp.add_url_rule("/register", view_func=RegisterAPI.as_view("register"))
-auth_bp.add_url_rule(
-    "/make-token", view_func=TokenMakerAPI.as_view("make-token")
-)
-auth_bp.add_url_rule(
-    "/get-token", view_func=TokenMakerAPI.as_view("get-token")
-)
-auth_bp.add_url_rule(
-    "/revoke-token", view_func=TokenRevokerAPI.as_view("revoke-token")
-)
-auth_bp.add_url_rule(
-    "/change-login", view_func=ChangeLoginAPI.as_view("change_login")
-)
+auth_bp.add_url_rule("/make-token", view_func=TokenMakerAPI.as_view("make-token"))
+auth_bp.add_url_rule("/get-token", view_func=TokenMakerAPI.as_view("get-token"))
+auth_bp.add_url_rule("/revoke-token", view_func=TokenRevokerAPI.as_view("revoke-token"))
+auth_bp.add_url_rule("/change-login", view_func=ChangeLoginAPI.as_view("change_login"))
 auth_bp.add_url_rule(
     "/change-password", view_func=ChangePasswordAPI.as_view("change_password")
 )

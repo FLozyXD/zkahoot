@@ -1,181 +1,155 @@
+import pytest
 from flask.testing import FlaskClient
 
+# HTTP статусы
+OK = 200
+BAD = 400
+FORBIDDEN = 403
+NOT_FOUND = 404
+TEAPOT = 418
 
-# /api/auth/register
-def test_valid_registration(client: FlaskClient, valid_user):
-    response = client.post("/api/auth/register", json=valid_user)
-    assert response.status_code == 200
+# Константы тестовых данных
+LOGIN = "client0"
+PASSWORD = "test_password"
+OTHER_LOGIN = "client1"
+OTHER_PASSWORD = "87654321"
+NEW_LOGIN = "client_new"
+NEW_PASSWORD = "newsecurepass123"
+WRONG_PASSWORD = "wrongpassword"
+SHORT_PASSWORD = "1234567"
+NONEXISTENT_LOGIN = "ghost"
 
 
-def test_invalid_registration_short_password(
-    client: FlaskClient, valid_user, short_password
-):
-    response = client.post(
-        "/api/auth/register",
-        json={"login": valid_user["login"], "password": short_password},
+def register_user(client: FlaskClient, login: str, password: str):
+    """Вспомогательная функция для регистрации пользователя."""
+    return client.post(
+        "/api/auth/register", json={"login": login, "password": password}
     )
-    assert response.status_code == 400
 
 
-def test_invalid_registration_empty_login(client: FlaskClient, valid_user, empty_login):
-    response = client.post(
-        "/api/auth/register",
-        json={"login": empty_login, "password": valid_user["password"]},
+# ---------- /api/auth/register ----------
+def test_register_ok(client: FlaskClient):
+    resp = register_user(client, LOGIN, PASSWORD)
+    assert resp.status_code == OK
+
+
+@pytest.mark.parametrize(
+    "login,password,status",
+    [
+        (LOGIN, SHORT_PASSWORD, BAD),  # короткий пароль
+        ("", PASSWORD, BAD),  # пустой логин
+    ],
+)
+def test_register_bad_input(client: FlaskClient, login, password, status):
+    resp = client.post(
+        "/api/auth/register", json={"login": login, "password": password}
     )
-    assert response.status_code == 400
+    assert resp.status_code == status
 
 
-def test_unique_registration(client: FlaskClient, valid_user):
-    client.post("/api/auth/register", json=valid_user)
-    response = client.post("/api/auth/register", json=valid_user)
-    assert response.status_code == 418  # UniqueViolation → I'm a teapot
+def test_register_duplicate(client: FlaskClient):
+    register_user(client, LOGIN, PASSWORD)
+    resp = register_user(client, LOGIN, PASSWORD)
+    assert resp.status_code == TEAPOT
 
 
-# /api/auth/change-login
-def test_valid_login_changing(client: FlaskClient, valid_user, new_valid_login):
-    client.post("/api/auth/register", json=valid_user)
-    response = client.post(
+# ---------- /api/auth/change-login ----------
+def test_change_login_ok(client: FlaskClient):
+    register_user(client, LOGIN, PASSWORD)
+    resp = client.post(
         "/api/auth/change-login",
         json={
-            "login": valid_user["login"],
-            "password": valid_user["password"],
-            "new_login": new_valid_login,
+            "login": LOGIN,
+            "password": PASSWORD,
+            "new_login": NEW_LOGIN,
         },
     )
-    assert response.status_code == 200
+    assert resp.status_code == OK
 
 
-def test_invalid_login_changing_wrong_password(
-    client: FlaskClient, valid_user, new_valid_login, wrong_password
-):
-    client.post("/api/auth/register", json=valid_user)
-    response = client.post(
+@pytest.mark.parametrize(
+    "wrong_pwd,new_login_val,expected",
+    [
+        (WRONG_PASSWORD, NEW_LOGIN, FORBIDDEN),  # неверный пароль
+        (None, "", BAD),  # пустой новый логин
+        (None, None, BAD),  # нет поля new_login
+    ],
+)
+def test_change_login_fail(client: FlaskClient, wrong_pwd, new_login_val, expected):
+    register_user(client, LOGIN, PASSWORD)
+    payload = {
+        "login": LOGIN,
+        "password": wrong_pwd if wrong_pwd else PASSWORD,
+    }
+    if new_login_val is not None:
+        payload["new_login"] = new_login_val
+    resp = client.post("/api/auth/change-login", json=payload)
+    assert resp.status_code == expected
+
+
+def test_change_login_duplicate(client: FlaskClient):
+    register_user(client, LOGIN, PASSWORD)
+    register_user(client, OTHER_LOGIN, OTHER_PASSWORD)
+    resp = client.post(
         "/api/auth/change-login",
         json={
-            "login": valid_user["login"],
-            "password": wrong_password,
-            "new_login": new_valid_login,
+            "login": LOGIN,
+            "password": PASSWORD,
+            "new_login": OTHER_LOGIN,
         },
     )
-    assert response.status_code == 403
+    assert resp.status_code == FORBIDDEN
 
 
-def test_invalid_login_changing_empty_new_login(
-    client: FlaskClient, valid_user, empty_login
-):
-    client.post("/api/auth/register", json=valid_user)
-    response = client.post(
+def test_change_login_nonexistent(client: FlaskClient):
+    resp = client.post(
         "/api/auth/change-login",
-        json={
-            "login": valid_user["login"],
-            "password": valid_user["password"],
-            "new_login": empty_login,
-        },
+        json={"login": NONEXISTENT_LOGIN, "password": PASSWORD, "new_login": NEW_LOGIN},
     )
-    assert response.status_code == 400
+    assert resp.status_code == NOT_FOUND
 
 
-def test_invalid_login_changing_missing_new_login(client: FlaskClient, valid_user):
-    client.post("/api/auth/register", json=valid_user)
-    response = client.post(
-        "/api/auth/change-login",
-        json={"login": valid_user["login"], "password": valid_user["password"]},
-    )
-    assert response.status_code == 400
-
-
-def test_duplicate_login_changing(client: FlaskClient, valid_user, another_user):
-    client.post("/api/auth/register", json=valid_user)
-    client.post("/api/auth/register", json=another_user)
-    response = client.post(
-        "/api/auth/change-login",
-        json={
-            "login": valid_user["login"],
-            "password": valid_user["password"],
-            "new_login": another_user["login"],
-        },
-    )
-    assert response.status_code == 403
-
-
-def test_change_login_nonexistent_user(
-    client: FlaskClient, nonexistent_login, dummy_new_login
-):
-    response = client.post(
-        "/api/auth/change-login",
-        json={
-            "login": nonexistent_login,
-            "password": "test_password",  # пароль не проверяется, т.к. пользователь не найден
-            "new_login": dummy_new_login,
-        },
-    )
-    assert response.status_code == 404
-
-
-# /api/auth/change-password
-def test_valid_password_changing(client: FlaskClient, valid_user, new_valid_password):
-    client.post("/api/auth/register", json=valid_user)
-    response = client.post(
+# ---------- /api/auth/change-password ----------
+def test_change_password_ok(client: FlaskClient):
+    register_user(client, LOGIN, PASSWORD)
+    resp = client.post(
         "/api/auth/change-password",
         json={
-            "login": valid_user["login"],
-            "password": valid_user["password"],
-            "new_password": new_valid_password,
+            "login": LOGIN,
+            "password": PASSWORD,
+            "new_password": NEW_PASSWORD,
         },
     )
-    assert response.status_code == 200
+    assert resp.status_code == OK
 
 
-def test_invalid_password_changing_wrong_old_password(
-    client: FlaskClient, valid_user, new_valid_password, wrong_password
-):
-    client.post("/api/auth/register", json=valid_user)
-    response = client.post(
+@pytest.mark.parametrize(
+    "wrong_old,new_pwd_val,expected",
+    [
+        (WRONG_PASSWORD, NEW_PASSWORD, FORBIDDEN),
+        (None, "short", BAD),  # слишком короткий новый пароль
+        (None, None, BAD),  # нет new_password
+    ],
+)
+def test_change_password_fail(client: FlaskClient, wrong_old, new_pwd_val, expected):
+    register_user(client, LOGIN, PASSWORD)
+    payload = {
+        "login": LOGIN,
+        "password": wrong_old if wrong_old else PASSWORD,
+    }
+    if new_pwd_val is not None:
+        payload["new_password"] = new_pwd_val
+    resp = client.post("/api/auth/change-password", json=payload)
+    assert resp.status_code == expected
+
+
+def test_change_password_nonexistent(client: FlaskClient):
+    resp = client.post(
         "/api/auth/change-password",
         json={
-            "login": valid_user["login"],
-            "password": wrong_password,
-            "new_password": new_valid_password,
+            "login": NONEXISTENT_LOGIN,
+            "password": PASSWORD,
+            "new_password": NEW_PASSWORD,
         },
     )
-    assert response.status_code == 403
-
-
-def test_invalid_password_changing_short_new_password(
-    client: FlaskClient, valid_user, short_new_password
-):
-    client.post("/api/auth/register", json=valid_user)
-    response = client.post(
-        "/api/auth/change-password",
-        json={
-            "login": valid_user["login"],
-            "password": valid_user["password"],
-            "new_password": short_new_password,
-        },
-    )
-    assert response.status_code == 400
-
-
-def test_invalid_password_changing_missing_new_password(
-    client: FlaskClient, valid_user
-):
-    client.post("/api/auth/register", json=valid_user)
-    response = client.post(
-        "/api/auth/change-password",
-        json={"login": valid_user["login"], "password": valid_user["password"]},
-    )
-    assert response.status_code == 400
-
-
-def test_change_password_nonexistent_user(
-    client: FlaskClient, nonexistent_login, another_new_password
-):
-    response = client.post(
-        "/api/auth/change-password",
-        json={
-            "login": nonexistent_login,
-            "password": "test_password",  # пароль не проверяется
-            "new_password": another_new_password,
-        },
-    )
-    assert response.status_code == 404
+    assert resp.status_code == NOT_FOUND
