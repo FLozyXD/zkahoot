@@ -17,6 +17,14 @@ class DBWrapper:
         self.commit()
         self.close()
 
+    def truncate_tables(self, tables: list[str]) -> None:
+        for table in tables:
+            try:
+                self.cur.execute(f'TRUNCATE TABLE "{table}" CASCADE')
+            except psycopg2.errors.UndefinedTable:
+                pass
+        self.commit()
+
     def _make_clause(self, **query) -> str:
         items = list(query.items())
         sql = " AND ".join([f"{item[0]} = %s" for item in items])
@@ -121,18 +129,13 @@ class DBWrapper:
         )
 
     def _select_answer(self, **query) -> list[Answer]:
-        return [
-            Answer(*obj_t)
-            for obj_t in self._select_from_table("answers", **query)
-        ]
+        return [Answer(*obj_t) for obj_t in self._select_from_table("answers", **query)]
 
     def _select_question(self, **query) -> list[Iterable]:
         questions = []
         for obj_t in self._select_from_table("questions", **query):
             answer = self._select_answer(id=obj_t[4])[0]
-            question = TextQuestion(
-                obj_t[0], obj_t[1], obj_t[2], answer, obj_t[5]
-            )
+            question = TextQuestion(obj_t[0], obj_t[1], obj_t[2], answer, obj_t[5])
             questions.append(question)
         return questions
 
