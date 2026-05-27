@@ -35,10 +35,10 @@
       <h3>Список квизов</h3>
 
       <!-- Поиск (по доке query обязателен, иначе 400 ошибка) -->
-      <div class="search-field">
+      <form class="search-field" @submit.prevent="fetchQuizzes">
         <input v-model="searchQuery" placeholder="Поиск по названию" />
-        <button @click="fetchQuizzes">Найти</button>
-      </div>
+        <button type="submit">Найти</button>
+      </form>
 
       <ul v-if="quizzes.length > 0">
         <li v-for="quiz in quizzes" :key="quiz.id">

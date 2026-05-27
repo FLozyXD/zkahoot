@@ -10,19 +10,19 @@
 
     <section>
       <h3>Присоединиться по коду</h3>
-      <div>
+      <form @submit.prevent="joinByToken">
         <input v-model="joinToken" placeholder="Код лобби" />
-        <button @click="joinByToken">Присоединиться</button>
-      </div>
+        <button type="submit">Присоединиться</button>
+      </form>
       <p v-if="joinError" class="color-red">{{ joinError }}</p>
     </section>
 
     <section class="lobbies">
       <h3>Доступные лобби</h3>
-      <div>
+      <form @submit.prevent="fetchLobbies">
         <input v-model="searchQuery" placeholder="Поиск по названию..." />
-        <button @click="fetchLobbies">Найти</button>
-      </div>
+        <button type="submit">Найти</button>
+      </form>
 
       <ul v-if="lobbies.length > 0">
         <li v-for="lobby in lobbies" :key="lobby.token">
@@ -88,12 +88,12 @@ onMounted(() => {
   .create {
     margin: 32px 0;
   }
-  section > div {
+  section > form {
     display: flex;
     gap: 16px;
     align-items: stretch;
   }
-  section > div > input {
+  section > form > input {
     margin-bottom: 0;
   }
   .lobbies > ul, .lobbies p {

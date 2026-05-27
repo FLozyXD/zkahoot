@@ -6,7 +6,11 @@
       <div>
         <input v-model="name" placeholder="Название лобби" required />
         <div class="choose-quiz-field">
-          <input v-model="quizSearchQuery" placeholder="Название квиза" />
+          <input
+            v-model="quizSearchQuery"
+            placeholder="Название квиза"
+            @keydown.enter.prevent="fetchQuizzes"
+          />
           <button type="button" @click="fetchQuizzes">Найти</button>
         </div>
 
