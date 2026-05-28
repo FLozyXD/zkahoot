@@ -24,7 +24,6 @@
       </div>
 
       <p v-if="statusMessage" style="margin-top: 10px; color: blue">{{ statusMessage }}</p>
-
     </div>
     <div v-else>
       <p>Лобби не найдено или вы из него вышли</p>
@@ -144,12 +143,12 @@ onBeforeRouteLeave(async () => {
 </script>
 
 <style scoped>
-  .control {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  .control p {
-    margin: 0;
-  }
+.control {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.control p {
+  margin: 0;
+}
 </style>

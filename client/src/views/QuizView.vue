@@ -79,7 +79,15 @@
           <strong>{{ quiz.quiz_name }}</strong> (Вопросов: {{ quiz.questions.length }})
           <button v-if="canManageQuiz(quiz)" @click="startEditQuiz(quiz)">Редактировать</button>
           <button v-if="canManageQuiz(quiz)" @click="deleteQuiz(quiz.id)">Удалить</button>
-          <button v-if="canManageQuiz(quiz)" @click="$router.push({ path: '/lobbies/create', query: { quizId: quiz.id, quizName: quiz.quiz_name } })">
+          <button
+            v-if="canManageQuiz(quiz)"
+            @click="
+              $router.push({
+                path: '/lobbies/create',
+                query: { quizId: quiz.id, quizName: quiz.quiz_name },
+              })
+            "
+          >
             Создать лобби
           </button>
         </li>

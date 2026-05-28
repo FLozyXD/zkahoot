@@ -7,12 +7,10 @@
       <h1>Игра: {{ lobby.quiz.quiz_name }}</h1>
       <form @submit.prevent="submitAnswers">
         <div v-for="(question, index) in lobby.quiz.questions" :key="question.id || index">
-          <p><strong>Вопрос {{ index + 1 }}:</strong> {{ question.question }}</p>
-          <input
-            v-model="answers[index]"
-            type="text"
-            placeholder="Ваш ответ"
-          />
+          <p>
+            <strong>Вопрос {{ index + 1 }}:</strong> {{ question.question }}
+          </p>
+          <input v-model="answers[index]" type="text" placeholder="Ваш ответ" />
         </div>
         <button type="submit" :disabled="submitting">
           {{ submitting ? 'Отправка...' : 'Сдать ответы' }}
@@ -48,12 +46,11 @@ onMounted(async () => {
 })
 
 const submitAnswers = async () => {
-  if (!confirm("Вы уверены, что хотите сдать ответы и выйти?"))
-    return
+  if (!confirm('Вы уверены, что хотите сдать ответы и выйти?')) return
 
   submitting.value = true
   try {
-    const answers_ = answers.value.map(a => a.trim())
+    const answers_ = answers.value.map((a) => a.trim())
     const response = await lobbyApi.compare(answers_)
     const results = response.data
 
@@ -63,8 +60,8 @@ const submitAnswers = async () => {
       state: {
         results: JSON.stringify(results),
         questions: JSON.stringify(lobby.value.quiz.questions),
-        userAnswers: JSON.stringify(answers_)
-      }
+        userAnswers: JSON.stringify(answers_),
+      },
     })
   } catch (error) {
     console.error('Ошибка при сдаче ответов:', error)

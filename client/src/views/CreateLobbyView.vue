@@ -14,13 +14,13 @@
           <button type="button" @click="fetchQuizzes">Найти</button>
         </div>
 
-        <div
-          v-if="quizzes.length > 0"
-        >
-          <ul v-for="quiz in quizzes"
-              class="quizzes"
-              :key="quiz.id"
-              @click="selectedQuizId = quiz.id" >
+        <div v-if="quizzes.length > 0">
+          <ul
+            v-for="quiz in quizzes"
+            class="quizzes"
+            :key="quiz.id"
+            @click="selectedQuizId = quiz.id"
+          >
             <li>
               {{ quiz.quiz_name }} ({{ quiz.questions.length }} вопр.)
               <span v-if="selectedQuizId === quiz.id">(Выбран)</span>
@@ -32,7 +32,14 @@
 
       <div class="control-buttons">
         <button type="submit" :disabled="!selectedQuizId || !name">Создать</button>
-        <button class="back" type="button" @click="$router.push('/lobbies')" style="margin-left: 10px">К списку лобби</button>
+        <button
+          class="back"
+          type="button"
+          @click="$router.push('/lobbies')"
+          style="margin-left: 10px"
+        >
+          К списку лобби
+        </button>
       </div>
     </form>
   </div>
@@ -81,23 +88,27 @@ onMounted(() => {
 </script>
 
 <style scoped>
-  .choose-quiz-field, .control-buttons {
-    display: flex;
-    gap: 16px;
-  }
-  .choose-quiz-field, span, ul {
-    margin: 0;
-  }
-  .choose-quiz-field > * {
-    margin-bottom: 0;
-  }
-  .control-buttons > .back {
-    width: 30%;
-  }
-  .not-found, li {
-    margin: 32px 0;
-  }
-  li {
-    cursor: pointer;
-  }
+.choose-quiz-field,
+.control-buttons {
+  display: flex;
+  gap: 16px;
+}
+.choose-quiz-field,
+span,
+ul {
+  margin: 0;
+}
+.choose-quiz-field > * {
+  margin-bottom: 0;
+}
+.control-buttons > .back {
+  width: 30%;
+}
+.not-found,
+li {
+  margin: 32px 0;
+}
+li {
+  cursor: pointer;
+}
 </style>

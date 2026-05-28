@@ -8,12 +8,12 @@
     </div>
 
     <div v-else>
-      <p>
-        <strong>Ваш результат:</strong> {{ correctAnswersCount }} из {{ totalQuestionsCount }}
-      </p>
+      <p><strong>Ваш результат:</strong> {{ correctAnswersCount }} из {{ totalQuestionsCount }}</p>
 
       <div v-for="(question, index) in questions" :key="index">
-        <p><strong>Вопрос {{ index + 1 }}:</strong> {{ question.question }}</p>
+        <p>
+          <strong>Вопрос {{ index + 1 }}:</strong> {{ question.question }}
+        </p>
         <p>
           Ваш ответ: <em>{{ userAnswers[index] }}</em>
           <span v-if="results[index]"> (Верно)</span>
@@ -47,7 +47,7 @@ onMounted(() => {
   }
 })
 
-const correctAnswersCount = computed(() => results.value.filter(isCorrect => isCorrect).length)
+const correctAnswersCount = computed(() => results.value.filter((isCorrect) => isCorrect).length)
 const totalQuestionsCount = computed(() => results.value.length)
 
 const goHome = () => {
@@ -60,8 +60,8 @@ const goLobbies = () => {
 </script>
 
 <style scoped>
-  .control {
-    display: flex;
-    gap: 16px;
-  }
+.control {
+  display: flex;
+  gap: 16px;
+}
 </style>

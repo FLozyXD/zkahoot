@@ -1,4 +1,4 @@
-import api from './index';
+import api from './index'
 
 export const lobbyApi = {
   create: (name, quizId) => api.post('/lobby/create', { name, quiz_id: quizId }),
@@ -9,8 +9,8 @@ export const lobbyApi = {
   pollRunning: (token) => api.get(`/lobby/poll-running/${token}`),
   search: (query = '') => api.get('/lobby/search', { params: { query } }),
   compare: (answers) => api.put('/lobby/compare', { answers }),
-};
+}
 
 export const quizApi = {
   search: (query = '') => api.get('/quiz/search', { params: { query } }),
-};
+}

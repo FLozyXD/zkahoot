@@ -8,14 +8,8 @@
 
     <form @submit.prevent="onLogin">
       <h3>Вход</h3>
-      <input v-model="loginForm.login"
-             type="text"
-             placeholder="Логин"
-             required />
-      <input v-model="loginForm.password"
-             type="password"
-             placeholder="Пароль"
-             required />
+      <input v-model="loginForm.login" type="text" placeholder="Логин" required />
+      <input v-model="loginForm.password" type="password" placeholder="Пароль" required />
       <button type="submit">Войти</button>
     </form>
 
@@ -23,14 +17,8 @@
 
     <form @submit.prevent="onRegister">
       <h3>Регистрация</h3>
-      <input v-model="registerForm.login"
-             type="text"
-             placeholder="Новый логин"
-             required />
-      <input v-model="registerForm.password"
-             type="password"
-             placeholder="Новый пароль"
-             required />
+      <input v-model="registerForm.login" type="text" placeholder="Новый логин" required />
+      <input v-model="registerForm.password" type="password" placeholder="Новый пароль" required />
       <button type="submit">Зарегистрироваться</button>
     </form>
   </div>
@@ -67,7 +55,7 @@ const onRegister = async () => {
 </script>
 
 <style scoped>
-  div > h1 {
-    margin: 32px 0;
-  }
+div > h1 {
+  margin: 32px 0;
+}
 </style>

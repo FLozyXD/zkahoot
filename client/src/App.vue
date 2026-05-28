@@ -39,17 +39,18 @@ const onLogout = async () => {
 </script>
 
 <style>
-  .color-red {
-    color: #D93526;
-  }
-  * {
-    margin: 8px;
-  }
-  nav, nav > div {
-    display: flex;
-    align-items: center;
-  }
-  nav > div {
-    gap: 32px;
-  }
+.color-red {
+  color: #d93526;
+}
+* {
+  margin: 8px;
+}
+nav,
+nav > div {
+  display: flex;
+  align-items: center;
+}
+nav > div {
+  gap: 32px;
+}
 </style>
