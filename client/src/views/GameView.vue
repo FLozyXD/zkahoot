@@ -67,6 +67,7 @@ const submitAnswers = async () => {
     console.error('Ошибка при сдаче ответов:', error)
     alert('Не удалось сдать ответы')
   } finally {
+    await lobbyApi.exit()
     submitting.value = false
   }
 }

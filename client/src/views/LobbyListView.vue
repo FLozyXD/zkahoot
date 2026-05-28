@@ -79,7 +79,15 @@ const joinByToken = async () => {
   }
 };
 
+const routeIfNecessary = async () => {
+  const response = await lobbyApi.getInfo();
+  if (response.status !== 200)
+    return;
+  router.push(`/lobbies/${response.data.token}`);
+}
+
 onMounted(() => {
+  routeIfNecessary();
   fetchLobbies();
 });
 </script>
