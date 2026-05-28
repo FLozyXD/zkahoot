@@ -18,4 +18,14 @@ api.interceptors.request.use(
   }
 );
 
+// Unauthorized => Забываем про токен, логин и айди
+api.interceptors.response.use(
+  response => { return response; },
+  error => {
+    if (error.response.status !== 401)
+      return error;
+    localStorage.clear();
+  },
+);
+
 export default api;
