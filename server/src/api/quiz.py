@@ -22,20 +22,40 @@ class QuizAPI(MethodView):
 class RegisterQuiz(QuizAPI):
     def _verify_request(self) -> None:
         body = dict(request.get_json())
-        body["creator_id"] = g.user.id
-        body = ImmutableDict(body)
+
+        resolved_body = {
+            "id": None,
+            "quiz_name": body["name"],
+            "creator_id": g.user.id,
+            "questions": [],
+        }
+        for q in body["questions"]:
+            resolved_body["questions"].append(
+                {
+                    "id": None,
+                    "quiz_id": None,
+                    "question": q["text"],
+                    "answer": {
+                        "id": None,
+                        "answer": q["answer"],
+                    },
+                    "type_dependent": None,
+                }
+            )
+
+        body = ImmutableDict(resolved_body)
         try:
             self.quiz = Quiz.from_json(body)
         except KeyError:
             abort(400)
 
-    def post(self) -> tuple[dict, int]:
+    def post(self) -> tuple[str, int]:
         with DBWrapper() as dbw:
             try:
                 dbw.insert(self.quiz)
             except UniqueViolation:
                 abort(403)
-        return {"status": "OK"}, 200
+        return "", 200
 
 
 class DeleteQuiz(QuizAPI):
@@ -44,14 +64,16 @@ class DeleteQuiz(QuizAPI):
         if not body:
             abort(400)
         try:
-            self.quiz_id = body["id"]
+            self.quiz_id = body["quiz_id"]
         except KeyError:
             abort(400)
 
-    def delete(self) -> tuple[dict, int]:
+    def delete(self) -> tuple[str, int]:
         with DBWrapper() as dbw:
             try:
-                quizzes = dbw.select(Quiz, id=self.quiz_id, creator_id=g.user.id)
+                quizzes = dbw.select(
+                    Quiz, id=self.quiz_id, creator_id=g.user.id
+                )
                 if not quizzes:
                     abort(404)
                 quiz = quizzes[0]
@@ -61,7 +83,7 @@ class DeleteQuiz(QuizAPI):
                 dbw.delete(quiz)
             except ForeignKeyViolation:
                 abort(400)
-        return {"status": "OK"}, 200
+        return "", 200
 
 
 class ChangeQuiz(QuizAPI):
@@ -76,43 +98,85 @@ class ChangeQuiz(QuizAPI):
         except KeyError:
             abort(400)
 
-    def post(self) -> tuple[dict, int]:
+    def post(self) -> tuple[str, int]:
         with DBWrapper() as dbw:
             try:
-                quizzes = dbw.select(Quiz, id=self.quiz_id, creator_id=g.user.id)
+                quizzes = dbw.select(
+                    Quiz, id=self.quiz_id, creator_id=g.user.id
+                )
                 if not quizzes:
                     abort(404)
                 existing_quiz = quizzes[0]
             except IndexError:
                 abort(404)
+
+            if not self.questions:
+                abort(400)
+
+            existing_questions = {
+                question.id: question for question in existing_quiz.questions
+            }
+            resolved_questions = []
+
+            try:
+                for question in self.questions:
+                    question = dict(question)
+                    answer = dict(question["answer"])
+                    question_id = question["id"]
+
+                    if question_id is None:
+                        answer["id"] = None
+                    elif question_id in existing_questions:
+                        answer["id"] = existing_questions[
+                            question_id
+                        ].answer.id
+                    else:
+                        abort(400)
+
+                    question["quiz_id"] = existing_quiz.id
+                    question["answer"] = answer
+                    question.setdefault("type_dependent", None)
+                    resolved_questions.append(question)
+            except KeyError:
+                abort(400)
+
             updated_quiz = Quiz(
                 existing_quiz.id,
                 self.quiz_name,
                 existing_quiz.creator_id,
-                [TextQuestion.from_json(q) for q in self.questions],
+                [TextQuestion.from_json(q) for q in resolved_questions],
             )
-            dbw.update(updated_quiz)
-        return {"status": "OK"}, 200
+            try:
+                dbw.update(updated_quiz)
+            except UniqueViolation:
+                abort(403)
+        return "", 200
 
 
 class SearchQuiz(MethodView):
-    def post(self) -> tuple[dict, int]:
-        body = request.get_json()
-        if not body:
-            abort(400)
+    def get(self) -> tuple[list[dict], int]:
         try:
-            quiz_name = body["quiz_name"]
+            quiz_name = request.args["query"]
         except KeyError:
             abort(400)
-        with DBWrapper() as dbw:
-            quizzes = dbw.select(Quiz, quiz_name=quiz_name)
-            if not quizzes:
-                return {"quizzes": []}, 200
-            quizzes_json = [quiz.to_json() for quiz in quizzes]
-        return {"quizzes": quizzes_json}, 200
+        try:
+            creator_id = request.args["creator_id"]
+        except KeyError:
+            with DBWrapper() as dbw:
+                quizzes = dbw.select(Quiz, quiz_name=quiz_name)
+                quizzes_json = [quiz.to_json() for quiz in quizzes]
+        else:
+            with DBWrapper() as dbw:
+                quizzes = dbw.select(
+                    Quiz, quiz_name=quiz_name, creator_id=creator_id
+                )
+                quizzes_json = [quiz.to_json() for quiz in quizzes]
+        return quizzes_json, 200
 
 
-quiz_bp.add_url_rule("/register", view_func=RegisterQuiz.as_view("register_quiz"))
+quiz_bp.add_url_rule(
+    "/register", view_func=RegisterQuiz.as_view("register_quiz")
+)
 quiz_bp.add_url_rule("/delete", view_func=DeleteQuiz.as_view("delete_quiz"))
 quiz_bp.add_url_rule("/change", view_func=ChangeQuiz.as_view("change_quiz"))
 quiz_bp.add_url_rule("/search", view_func=SearchQuiz.as_view("search_quiz"))

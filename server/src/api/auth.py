@@ -48,13 +48,13 @@ class AuthorizedUserAPI(UserAPI):
 
 
 class RegisterAPI(UserAPI):
-    def post(self) -> tuple[dict, int]:
+    def post(self) -> tuple[str, int]:
         with DBWrapper() as dbw:
             try:
                 dbw.insert(self.user)
             except UniqueViolation:
-                abort(403)
-        return {"status": "OK"}, 200
+                abort(418)
+        return "", 200
 
 
 class TokenMakerAPI(AuthorizedUserAPI):
@@ -71,7 +71,11 @@ class TokenMakerAPI(AuthorizedUserAPI):
             return token
 
     def post(self) -> tuple[dict, int]:
-        return {"status": "OK", "token": self._authorize()}
+        return {
+            "token": self._authorize(),
+            "user_id": self.user.id,
+            "login": self.user.login,
+        }
 
 
 class TokenRevokerAPI(AuthorizedUserAPI):
@@ -85,8 +89,17 @@ class TokenRevokerAPI(AuthorizedUserAPI):
             del self.token_user_ud[token]
             del self.user_token_ud[self.user.login]
 
-    def post(self) -> tuple[dict, int]:
-        return {"status": "OK"}
+    def post(self) -> tuple[str, int]:
+        return "", 200
+
+
+class CurrentUserAPI(MethodView):
+    def get(self) -> tuple[dict, int]:
+        Authorizer.require_token()
+        return {
+            "user_id": g.user.id,
+            "login": g.user.login,
+        }, 200
 
 
 class ChangeLoginAPI(TokenRevokerAPI):
@@ -106,7 +119,7 @@ class ChangeLoginAPI(TokenRevokerAPI):
             if not new_login:
                 abort(400)
 
-    def post(self) -> tuple[dict, int]:
+    def post(self) -> tuple[str, int]:
         updated_user = User(
             self.user.id,
             self.new_login,
@@ -119,7 +132,7 @@ class ChangeLoginAPI(TokenRevokerAPI):
                 self._revoke()
             except UniqueViolation:
                 abort(403)
-        return {"status": "OK"}, 200
+        return "", 200
 
 
 class ChangePasswordAPI(TokenRevokerAPI):
@@ -139,7 +152,7 @@ class ChangePasswordAPI(TokenRevokerAPI):
             if len(new_password) < self.min_password_length:
                 abort(400)
 
-    def post(self) -> tuple[dict, int]:
+    def post(self) -> tuple[str, int]:
         updated_user = User(
             self.user.id,
             self.user.login,
@@ -148,7 +161,7 @@ class ChangePasswordAPI(TokenRevokerAPI):
         with DBWrapper() as dbw:
             dbw.update(updated_user)
         self._revoke()
-        return {"status": "OK"}, 200
+        return "", 200
 
 
 class Authorizer:
@@ -178,6 +191,7 @@ auth_bp.add_url_rule(
 auth_bp.add_url_rule(
     "/revoke-token", view_func=TokenRevokerAPI.as_view("revoke-token")
 )
+auth_bp.add_url_rule("/me", view_func=CurrentUserAPI.as_view("me"))
 auth_bp.add_url_rule(
     "/change-login", view_func=ChangeLoginAPI.as_view("change_login")
 )

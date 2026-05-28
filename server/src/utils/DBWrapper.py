@@ -1,6 +1,6 @@
 from src.classes import Answer, TextQuestion, User, Quiz
 
-from typing import Iterable
+from typing import Iterable, Self
 import psycopg2
 
 
@@ -10,7 +10,7 @@ class DBWrapper:
         self.conn = psycopg2.connect(self.dsn)
         self.cur = self.conn.cursor()
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *args, **kwargs) -> None:
@@ -105,8 +105,20 @@ class DBWrapper:
         )
 
     def _update_quiz(self, obj) -> None:
+        existing_questions = self._select_question(quiz_id=obj.id)
+        updated_question_ids = {q.id for q in obj.questions if q.id is not None}
+
+        for question in existing_questions:
+            if question.id not in updated_question_ids:
+                self._delete_question(question)
+
         for q in obj.questions:
-            self._update_question(q)
+            setattr(q, "quiz_id", obj.id)
+            if q.id is None:
+                self._insert_question(q)
+            else:
+                self._update_question(q)
+
         obj_t = (obj.quiz_name, obj.id)
         self.cur.execute(
             "UPDATE quizzes SET quiz_name = %s WHERE id = %s",
