@@ -12,7 +12,6 @@
             v-model="answers[index]"
             type="text"
             placeholder="Ваш ответ"
-            required
           />
         </div>
         <button type="submit" :disabled="submitting">
@@ -49,9 +48,13 @@ onMounted(async () => {
 })
 
 const submitAnswers = async () => {
+  if (!confirm("Вы уверены, что хотите сдать ответы и выйти?"))
+    return
+
   submitting.value = true
   try {
-    const response = await lobbyApi.compare(answers.value)
+    const answers_ = answers.value.map(a => a.trim())
+    const response = await lobbyApi.compare(answers_)
     const results = response.data
 
     router.push({
@@ -60,12 +63,12 @@ const submitAnswers = async () => {
       state: {
         results: JSON.stringify(results),
         questions: JSON.stringify(lobby.value.quiz.questions),
-        userAnswers: JSON.stringify(answers.value)
+        userAnswers: JSON.stringify(answers_)
       }
     })
   } catch (error) {
     console.error('Ошибка при сдаче ответов:', error)
-    alert('Не удалось сдать ответы')
+    alert('Не удалось сдать ответы!')
   } finally {
     await lobbyApi.exit()
     submitting.value = false
