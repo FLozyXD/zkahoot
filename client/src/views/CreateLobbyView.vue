@@ -41,9 +41,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { lobbyApi, quizApi } from '../api/lobby'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 const name = ref('')
 const selectedQuizId = ref(null)
 const quizzes = ref([])
@@ -71,6 +72,10 @@ const createLobby = async () => {
 }
 
 onMounted(() => {
+  if (route.query.quizId) {
+    selectedQuizId.value = parseInt(route.query.quizId)
+    quizSearchQuery.value = route.query.quizName || ''
+  }
   fetchQuizzes()
 })
 </script>

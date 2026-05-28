@@ -8,6 +8,7 @@ export const lobbyApi = {
   getInfo: () => api.get('/lobby/get-info'),
   pollRunning: (token) => api.get(`/lobby/poll-running/${token}`),
   search: (query = '') => api.get('/lobby/search', { params: { query } }),
+  compare: (answers) => api.put('/lobby/compare', { answers }),
 };
 
 export const quizApi = {

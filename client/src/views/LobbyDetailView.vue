@@ -51,6 +51,7 @@ const statusMessage = ref('')
 const gameStarted = ref(false)
 let infoInterval = null
 let hasLeftLobby = false
+let isProceedingToGame = false
 
 const fetchInfo = async () => {
   try {
@@ -67,6 +68,8 @@ const fetchInfo = async () => {
 
 const isOwner = (login) => {
   // Мы предположили, что первый в списке - владелец
+  console.log(lobby.value?.users[0])
+  console.log(1, login)
   return lobby.value?.users[0] === login
 }
 
@@ -75,7 +78,8 @@ const startGame = async () => {
   statusMessage.value = ''
   try {
     await lobbyApi.run()
-    statusMessage.value = 'Игра успешно запущена!'
+    isProceedingToGame = true // <--- Запрет выхода из лобби
+    router.push(`/lobbies/${route.params.token}/play`)
   } catch (error) {
     console.error('Ошибка при запуске игры:', error)
     statusMessage.value = 'Не удалось запустить игру.'
@@ -96,7 +100,7 @@ const leaveLobby = async () => {
 }
 
 const exitLobbyOnLeave = async () => {
-  if (hasLeftLobby || !lobby.value || !authStore.isAuthenticated) return
+  if (isProceedingToGame || hasLeftLobby || !lobby.value || !authStore.isAuthenticated) return
 
   hasLeftLobby = true
   try {
@@ -112,8 +116,9 @@ const waitForStart = async () => {
   try {
     const response = await lobbyApi.pollRunning(route.params.token)
     if (response.status === 200) {
+      isProceedingToGame = true
+      router.push(`/lobbies/${route.params.token}/play`)
       gameStarted.value = true
-      statusMessage.value = 'Игра началась!'
     } else if (response.status === 202) {
       setTimeout(waitForStart, 2000)
     }

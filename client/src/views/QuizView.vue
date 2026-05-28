@@ -2,7 +2,6 @@
   <div>
     <h1>Управление квизами</h1>
 
-    <!-- Блок создания нового квиза -->
     <section>
       <h3>Создать новый квиз</h3>
       <form @submit.prevent="submitCreateQuiz">
@@ -80,7 +79,9 @@
           <strong>{{ quiz.quiz_name }}</strong> (Вопросов: {{ quiz.questions.length }})
           <button v-if="canManageQuiz(quiz)" @click="startEditQuiz(quiz)">Редактировать</button>
           <button v-if="canManageQuiz(quiz)" @click="deleteQuiz(quiz.id)">Удалить</button>
-          <!-- В будущем здесь появится кнопка "Создать лобби" -->
+          <button v-if="canManageQuiz(quiz)" @click="$router.push({ path: '/lobbies/create', query: { quizId: quiz.id, quizName: quiz.quiz_name } })">
+            Создать лобби
+          </button>
         </li>
       </ul>
       <p v-else>Квизы не найдены. Создайте свой первый квиз!</p>
