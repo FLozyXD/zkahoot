@@ -80,7 +80,6 @@
           <button v-if="canManageQuiz(quiz)" @click="startEditQuiz(quiz)">Редактировать</button>
           <button v-if="canManageQuiz(quiz)" @click="deleteQuiz(quiz.id)">Удалить</button>
           <button
-            v-if="canManageQuiz(quiz)"
             @click="
               $router.push({
                 path: '/lobbies/create',

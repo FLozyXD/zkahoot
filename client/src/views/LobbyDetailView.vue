@@ -46,7 +46,6 @@ const lobby = ref(null)
 const loading = ref(true)
 const starting = ref(false)
 const statusMessage = ref('')
-const gameStarted = ref(false)
 let infoInterval = null
 let hasLeftLobby = false
 let isProceedingToGame = false

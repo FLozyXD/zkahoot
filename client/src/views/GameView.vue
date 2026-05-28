@@ -37,7 +37,8 @@ onMounted(async () => {
   try {
     const response = await lobbyApi.getInfo()
     lobby.value = response.data
-    answers.value = new Array(lobby.value.quiz.questions.length).fill('')
+    const power = lobby.value.quiz.questions.length
+    answers.value = Array.from({ length: power }).fill('')
     loading.value = false
   } catch (error) {
     console.error('Ошибка при получении данных игры:', error)
