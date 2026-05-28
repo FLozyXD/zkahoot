@@ -15,7 +15,7 @@
         </li>
       </ul>
 
-      <div v-if="isOwner(authStore.login)">
+      <div v-if="isOwner(authStore.username)">
         <button @click="startGame" :disabled="starting">Начать игру</button>
       </div>
       <div v-else>
@@ -67,9 +67,6 @@ const fetchInfo = async () => {
 }
 
 const isOwner = (login) => {
-  // Мы предположили, что первый в списке - владелец
-  console.log(lobby.value?.users[0])
-  console.log(1, login)
   return lobby.value?.users[0] === login
 }
 
@@ -111,7 +108,7 @@ const exitLobbyOnLeave = async () => {
 }
 
 const waitForStart = async () => {
-  if (isOwner(authStore.login)) return
+  if (isOwner(authStore.username)) return
 
   try {
     const response = await lobbyApi.pollRunning(route.params.token)
@@ -133,7 +130,7 @@ onMounted(async () => {
   // Опрашиваем список игроков каждые 3 секунды
   infoInterval = setInterval(fetchInfo, 3000)
 
-  if (lobby.value && !isOwner(authStore.login)) {
+  if (lobby.value && !isOwner(authStore.username)) {
     waitForStart()
   }
 })
