@@ -15,20 +15,19 @@
         </li>
       </ul>
 
-      <div v-if="isOwner(authStore.username)">
-        <button @click="startGame" :disabled="starting">Начать игру</button>
-      </div>
-      <div v-else>
-        <p v-if="gameStarted" style="color: green; font-weight: bold">ИГРА НАЧАЛАСЬ!</p>
-        <p v-else>Ожидание начала игры организатором...</p>
+      <div class="control">
+        <div v-if="isOwner(authStore.username)">
+          <button @click="startGame" :disabled="starting">Начать игру</button>
+        </div>
+        <p v-else>Ожидание начала игры организатором</p>
+        <button @click="leaveLobby">Покинуть лобби</button>
       </div>
 
       <p v-if="statusMessage" style="margin-top: 10px; color: blue">{{ statusMessage }}</p>
 
-      <button @click="leaveLobby" style="margin-top: 20px">Покинуть лобби</button>
     </div>
     <div v-else>
-      <p>Лобби не найдено или вы из него вышли.</p>
+      <p>Лобби не найдено или вы из него вышли</p>
       <router-link to="/lobbies">Вернуться к списку</router-link>
     </div>
   </div>
@@ -75,7 +74,7 @@ const startGame = async () => {
   statusMessage.value = ''
   try {
     await lobbyApi.run()
-    isProceedingToGame = true // <--- Запрет выхода из лобби
+    isProceedingToGame = true
     router.push(`/lobbies/${route.params.token}/play`)
   } catch (error) {
     console.error('Ошибка при запуске игры:', error)
@@ -115,7 +114,6 @@ const waitForStart = async () => {
     if (response.status === 200) {
       isProceedingToGame = true
       router.push(`/lobbies/${route.params.token}/play`)
-      gameStarted.value = true
     } else if (response.status === 202) {
       setTimeout(waitForStart, 2000)
     }
@@ -144,3 +142,14 @@ onBeforeRouteLeave(async () => {
   await exitLobbyOnLeave()
 })
 </script>
+
+<style scoped>
+  .control {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .control p {
+    margin: 0;
+  }
+</style>

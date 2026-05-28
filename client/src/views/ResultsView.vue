@@ -22,7 +22,7 @@
         <hr />
       </div>
 
-      <div>
+      <div class="control">
         <button @click="goHome">Вернуться на главную</button>
         <button @click="goLobbies">Список лобби</button>
       </div>
@@ -58,3 +58,10 @@ const goLobbies = () => {
   router.push('/lobbies')
 }
 </script>
+
+<style scoped>
+  .control {
+    display: flex;
+    gap: 16px;
+  }
+</style>
