@@ -1,0 +1,217 @@
+@startuml ApiViews
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+package "API Views" {
+  class UserAPI {
+    # min_password_length = 8
+    # user: User
+    + __init__()
+    # _verify_request()
+  }
+
+  class AuthorizedUserAPI {
+    # token_user_ud: UnifiedDict
+    # user_token_ud: UnifiedDict
+    + __init__()
+  }
+
+  class RegisterAPI {
+    + post()
+  }
+
+  class TokenMakerAPI {
+    + _generate_token()
+    + _authorize()
+    + post()
+  }
+
+  class TokenRevokerAPI {
+    + __init__()
+    + _revoke()
+    + post()
+  }
+
+  class CurrentUserAPI {
+    + get()
+  }
+
+  class ChangeLoginAPI {
+    - new_login: str
+    + __init__()
+    # _verify_request()
+    + post()
+  }
+
+  class ChangePasswordAPI {
+    - new_password: str
+    + __init__()
+    # _verify_request()
+    + post()
+  }
+
+  class Authorizer {
+    + {static} require_token()
+  }
+
+  class LobbyAPI {
+    # lobby_mgr_cls = LobbyDictMgr
+    + __init__()
+    # _verify_request()
+  }
+
+  class InnerLobbyAPI {
+    + __init__()
+  }
+
+  class OuterLobbyAPI {
+    + __init__()
+  }
+
+  class CreateLobbyAPI {
+    - name: str
+    - quiz: Quiz
+    + __init__()
+    # _verify_request()
+    + post()
+  }
+
+  class JoinLobbyAPI {
+    + post(token)
+  }
+
+  class ExitLobbyAPI {
+    + post()
+  }
+
+  class RunLobbyAPI {
+    + post()
+  }
+
+  class InfoLobbyAPI {
+    + get()
+  }
+
+  class PollRunningLobbyAPI {
+    + get(token)
+  }
+
+  class CompareLobbyAPI {
+    - answers: list[Answer]
+    + __init__()
+    # _verify_request()
+    + put()
+  }
+
+  class SearchLobbyAPI {
+    - query: str
+    + __init__()
+    # _verify_request()
+    + get()
+  }
+
+  class QuizAPI {
+    + __init__()
+    # _verify_request()
+  }
+
+  class RegisterQuiz {
+    - quiz: Quiz
+    # _verify_request()
+    + post()
+  }
+
+  class DeleteQuiz {
+    - quiz_id: int
+    # _verify_request()
+    + delete()
+  }
+
+  class ChangeQuiz {
+    - quiz_id, quiz_name, questions
+    # _verify_request()
+    + post()
+  }
+
+  class SearchQuiz {
+    + get()
+  }
+}
+
+package "Blueprints" {
+  class "auth_bp" as AuthBP {
+    + prefix: /auth
+    + url rules
+  }
+
+  class "lobby_bp" as LobbyBP {
+    + prefix: /lobby
+    + before_request: require_token
+    + url rules
+  }
+
+  class "quiz_bp" as QuizBP {
+    + prefix: /quiz
+    + before_request: require_token
+    + url rules
+  }
+}
+
+' Inheritance
+UserAPI <|-- AuthorizedUserAPI
+UserAPI <|-- RegisterAPI
+AuthorizedUserAPI <|-- TokenMakerAPI
+AuthorizedUserAPI <|-- TokenRevokerAPI
+TokenRevokerAPI <|-- ChangeLoginAPI
+TokenRevokerAPI <|-- ChangePasswordAPI
+
+LobbyAPI <|-- InnerLobbyAPI
+LobbyAPI <|-- OuterLobbyAPI
+LobbyAPI <|-- PollRunningLobbyAPI
+LobbyAPI <|-- SearchLobbyAPI
+OuterLobbyAPI <|-- CreateLobbyAPI
+OuterLobbyAPI <|-- JoinLobbyAPI
+InnerLobbyAPI <|-- ExitLobbyAPI
+InnerLobbyAPI <|-- RunLobbyAPI
+InnerLobbyAPI <|-- InfoLobbyAPI
+InnerLobbyAPI <|-- CompareLobbyAPI
+
+QuizAPI <|-- RegisterQuiz
+QuizAPI <|-- DeleteQuiz
+QuizAPI <|-- ChangeQuiz
+
+' Registration with blueprints
+AuthBP --> UserAPI : registers
+AuthBP --> RegisterAPI : registers
+AuthBP --> TokenMakerAPI : registers
+AuthBP --> TokenRevokerAPI : registers
+AuthBP --> CurrentUserAPI : registers
+AuthBP --> ChangeLoginAPI : registers
+AuthBP --> ChangePasswordAPI : registers
+
+LobbyBP --> CreateLobbyAPI : registers
+LobbyBP --> JoinLobbyAPI : registers
+LobbyBP --> ExitLobbyAPI : registers
+LobbyBP --> RunLobbyAPI : registers
+LobbyBP --> InfoLobbyAPI : registers
+LobbyBP --> PollRunningLobbyAPI : registers
+LobbyBP --> CompareLobbyAPI : registers
+LobbyBP --> SearchLobbyAPI : registers
+
+QuizBP --> RegisterQuiz : registers
+QuizBP --> DeleteQuiz : registers
+QuizBP --> ChangeQuiz : registers
+QuizBP --> SearchQuiz : registers
+
+note bottom of LobbyBP
+  All endpoints
+  require auth token
+end note
+
+note bottom of QuizBP
+  All endpoints
+  require auth token
+end note
+
+@enduml

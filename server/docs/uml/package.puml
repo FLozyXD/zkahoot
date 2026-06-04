@@ -1,0 +1,124 @@
+@startuml PackageStructure
+
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontSize 11
+
+package "server" {
+  [__main__.py] as EntryPoint
+
+  package "api" {
+    [__init__.py] as AppFactory
+    [auth.py] as AuthAPI
+    [lobby.py] as LobbyAPI
+    [quiz.py] as QuizAPI
+  }
+
+  package "classes" {
+    [__init__.py] as ClassInit
+    [Answer.py] as AnswerCls
+    [Question.py] as QuestionCls
+    [Quiz.py] as QuizCls
+    [User.py] as UserCls
+    [Lobby.py] as LobbyCls
+  }
+
+  package "exceptions" {
+    [__init__.py] as ExcInit
+    [auth.py] as AuthExc
+    [lobby.py] as LobbyExc
+    [user.py] as UserExc
+  }
+
+  package "utils" {
+    [__init__.py] as UtilInit
+    [DBWrapper.py] as DBW
+    [Mgr.py] as Mgr
+    [UnifiedDict.py] as UDict
+  }
+
+  package "schemas" {
+    [main-schema.sql] as MainSchema
+    [lobbies-schema.sql] as LobbySchema
+    [sessions-schema.sql] as SessionSchema
+  }
+
+  package "tests" {
+    [__init__.py] as TestInit
+    package "api" {
+      [__init__.py] as TestAPIInit
+      [test_auth.py] as TestAuth
+      [test_quiz.py] as TestQuiz
+    }
+  }
+}
+
+' Dependencies
+EntryPoint --> AppFactory : create_app
+
+AppFactory --> AuthAPI : auth_bp
+AppFactory --> LobbyAPI : lobby_bp
+AppFactory --> QuizAPI : quiz_bp
+
+AuthAPI --> UserCls : User
+AuthAPI --> DBW : DBWrapper
+AuthAPI --> UDict : UnifiedDict
+
+LobbyAPI --> AuthAPI : Authorizer
+LobbyAPI --> AnswerCls : Answer
+LobbyAPI --> QuizCls : Quiz
+LobbyAPI --> Mgr : LobbyDictMgr
+LobbyAPI --> DBW : DBWrapper
+LobbyAPI --> LobbyExc : LobbyNotExistsError
+
+QuizAPI --> AuthAPI : Authorizer
+QuizAPI --> QuizCls : Quiz
+QuizAPI --> QuestionCls : TextQuestion
+QuizAPI --> DBW : DBWrapper
+
+QuestionCls --> AnswerCls : Answer
+QuizCls --> QuestionCls : TextQuestion
+QuizCls --> AnswerCls : Answer
+LobbyCls --> QuizCls : Quiz
+LobbyCls --> UserCls : User
+LobbyCls --> AnswerCls : Answer
+
+DBW --> AnswerCls : Answer
+DBW --> QuestionCls : TextQuestion
+DBW --> UserCls : User
+DBW --> QuizCls : Quiz
+
+Mgr --> LobbyCls : Lobby
+Mgr --> QuizCls : Quiz
+Mgr --> UserCls : User
+Mgr --> DBW : DBWrapper
+Mgr --> UDict : UnifiedDict
+Mgr --> LobbyExc : LobbyNotExistsError
+
+ExcInit --> AuthExc
+ExcInit --> UserExc
+ExcInit --> LobbyExc
+
+UtilInit --> UDict
+UtilInit --> DBW
+UtilInit --> Mgr
+
+ClassInit --> AnswerCls
+ClassInit --> QuestionCls
+ClassInit --> QuizCls
+ClassInit --> LobbyCls
+ClassInit --> UserCls
+
+TestInit --> TestAPIInit
+TestAPIInit --> TestAuth
+TestAPIInit --> TestQuiz
+
+TestAuth --> AppFactory : create_app
+TestAuth --> DBW : DBWrapper
+TestAuth --> UDict : UnifiedDict
+
+TestQuiz --> AppFactory : create_app
+TestQuiz --> DBW : DBWrapper
+TestQuiz --> UDict : UnifiedDict
+
+@enduml

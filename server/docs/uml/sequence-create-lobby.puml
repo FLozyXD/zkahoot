@@ -1,0 +1,41 @@
+@startuml CreateLobbyFlow
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor Client as C
+participant "Flask Router" as Flask
+participant "Authorizer\n(require_token)" as Auth
+participant "CreateLobbyAPI\n(post)" as View
+participant "LobbyDictMgr" as Mgr
+participant "DBWrapper\n(select)" as DBW
+database "PostgreSQL" as PG
+database "UnifiedDict" as UD
+
+== Step 1: Authentication ==
+C -> Flask: POST /lobby/create\nAuthorization: Bearer {token}
+Flask -> Auth: before_request\nrequire_token()
+Auth -> UD: token_user[{token}]
+UD --> Auth: user_id
+Auth -> Flask: g.user = user
+Flask -> View: dispatch_request()
+
+== Step 2: Request Validation ==
+View -> View: _verify_request()
+View -> DBW: select(Quiz, id=quiz_id)
+DBW -> PG: SELECT * FROM quizzes
+PG --> DBW: Quiz row
+DBW --> View: Quiz object
+
+== Step 3: Create Lobby ==
+View -> Mgr: create(name, owner_id, quiz)
+Mgr -> Mgr: token = secrets.token_hex(16)
+Mgr -> UD: token_lobby[{token}] = Lobby(...)
+Mgr -> UD: user_lobby[{owner_id}] = token
+Mgr --> View: {token}
+
+== Step 4: Response ==
+View --> Flask: {token, ...}
+Flask --> C: 200 OK\n{"token": "abc123..."}
+
+@enduml
