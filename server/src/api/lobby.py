@@ -132,9 +132,19 @@ class CompareLobbyAPI(InnerLobbyAPI):
         with self.lobby_mgr_cls() as lobby_mgr:
             lobby = lobby_mgr.select_by_user(g.user)
         if lobby.running:
-            compared = lobby.compare(self.answers)
-            return compared, 200
+            compared = lobby.save_result(g.user, self.answers)
+            return {
+                "results": compared,
+                "scoreboard": lobby.scoreboard(),
+            }, 200
         abort(403)
+
+
+class ScoreboardLobbyAPI(InnerLobbyAPI):
+    def get(self) -> tuple[list[dict], int]:
+        with self.lobby_mgr_cls() as lobby_mgr:
+            lobby = lobby_mgr.select_by_user(g.user)
+        return lobby.scoreboard(), 200
 
 
 class SearchLobbyAPI(LobbyAPI):
@@ -165,4 +175,7 @@ lobby_bp.add_url_rule(
     view_func=PollRunningLobbyAPI.as_view("poll-running"),
 )
 lobby_bp.add_url_rule("/compare", view_func=CompareLobbyAPI.as_view("compare"))
+lobby_bp.add_url_rule(
+    "/scoreboard", view_func=ScoreboardLobbyAPI.as_view("scoreboard")
+)
 lobby_bp.add_url_rule("/search", view_func=SearchLobbyAPI.as_view("search"))

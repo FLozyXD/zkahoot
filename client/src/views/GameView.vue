@@ -22,7 +22,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { lobbyApi } from '../api/lobby'
 
 const route = useRoute()
@@ -32,6 +32,7 @@ const lobby = ref(null)
 const loading = ref(true)
 const submitting = ref(false)
 const answers = ref([])
+let isProceedingToResults = false
 
 onMounted(async () => {
   try {
@@ -53,13 +54,15 @@ const submitAnswers = async () => {
   try {
     const answers_ = answers.value.map((a) => a.trim())
     const response = await lobbyApi.compare(answers_)
-    const results = response.data
+    const { results, scoreboard } = response.data
 
+    isProceedingToResults = true
     router.push({
       name: 'lobby-results',
       params: { token: route.params.token },
       state: {
         results: JSON.stringify(results),
+        scoreboard: JSON.stringify(scoreboard),
         questions: JSON.stringify(lobby.value.quiz.questions),
         userAnswers: JSON.stringify(answers_),
       },
@@ -68,8 +71,17 @@ const submitAnswers = async () => {
     console.error('Ошибка при сдаче ответов:', error)
     alert('Не удалось сдать ответы!')
   } finally {
-    await lobbyApi.exit()
     submitting.value = false
   }
 }
+
+onBeforeRouteLeave(async () => {
+  if (isProceedingToResults) return
+
+  try {
+    await lobbyApi.exit()
+  } catch (error) {
+    console.error('Ошибка при выходе из лобби во время игры:', error)
+  }
+})
 </script>
