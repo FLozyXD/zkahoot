@@ -51,7 +51,7 @@ const submitAnswers = async () => {
 
   submitting.value = true
   try {
-    const answers_ = answers.value.map((a) => a.trim())
+    const answers_ = answers.value.map((a) => a.trim().toLowerCase())
     const response = await lobbyApi.compare(answers_)
     const results = response.data
 
