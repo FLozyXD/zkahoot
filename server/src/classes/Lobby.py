@@ -35,7 +35,7 @@ class Lobby:
     def kick(self, user: User) -> None:
         users_matching = [u for u in self.users if u == user]
         if not len(users_matching):
-            raise ValueError
+            return
         for u in users_matching:
             self.users.remove(u)
 

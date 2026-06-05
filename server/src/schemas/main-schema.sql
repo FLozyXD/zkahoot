@@ -25,3 +25,12 @@ CREATE TABLE IF NOT EXISTS Questions (
     Answer_Id INT REFERENCES Answers (Id),
     Type_Dependent VARCHAR(512)
 );
+
+CREATE OR REPLACE FUNCTION toLowerCase() RETURNS TRIGGER AS $$
+BEGIN
+    NEW.Answer = lower(NEW.Answer);
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER ans_lower BEFORE INSERT ON Answers EXECUTE FUNCTION toLowerCase();
