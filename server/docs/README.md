@@ -1,347 +1,245 @@
-# Table of Contents
+# zkahoot API
 
-1.  [API](#org7f0e097)
-    1.  [Авторизация](#orgc96a197)
-    2.  [Endpoints](#orgbda4c05)
-        1.  [lobby](#org65d1de7)
-        2.  [auth](#org52d8d93)
-        3.  [quiz](#org1234abc)
+HTTP API сервера zkahoot: аутентификация, квизы и игровые лобби.
+Базовый префикс — `/api`. Формат данных — JSON.
 
+## Аутентификация
 
-<a id="org7f0e097"></a>
+Токен передаётся в заголовке:
 
-# API
+```http
+Authorization: Bearer <token>
+```
 
-Ниже приведена документация endpoint'ов, их методов.
+Токены и состояние лобби хранятся в памяти процесса. После перезапуска сервера
+выданные токены и активные лобби исчезают.
 
+### `POST /api/auth/register`
 
-<a id="orgc96a197"></a>
+Регистрация пользователя.
 
-## Авторизация
+```json
+{"login": "alice", "password": "password123"}
+```
 
-Авторизация производится с помощью токена, который генерируется с помощью endpoint'а `/api/auth/get-token`. Токен помещается в заголовок `Authorization` и проверяется во всех endpoint'ах, где нужна авторизация. По нему же и производится идентификация пользователя на backend'е.
+Успех — `200` с пустым телом. Пароль должен быть не короче 8 символов.
+Занятый логин — `418`.
 
+### `POST /api/auth/get-token`
 
-<a id="orgbda4c05"></a>
+Вход и выдача токена. То же тело, что у регистрации.
 
-## Endpoints
+```json
+{"token": "...", "user_id": 1, "login": "alice"}
+```
 
+### `POST /api/auth/make-token`
 
-<a id="org65d1de7"></a>
+Синоним `/get-token` с тем же контрактом.
 
-### lobby
+### `POST /api/auth/revoke-token`
 
-В этом разделе необходима авторизация пользователя.
+Отзыв токена. Тело: `{"login": "...", "password": "..."}`.
+Успех — `200` с пустым телом.
 
--   `/api/lobby/search`
-    -   Методы: `GET`
-    -   Принимает:
-        -   query - параметр ссылки. Строка, которая является частью названия квиза, что сейчас в лобби.
-    -   Выдает:
-        
-            [
-              {
-				"token": "a1b2c3d4e5f6...",
-				"name": "Моё Лобби",
-				"owner_id": 123,
-				"users": [
-				  "user_001",
-				  "user_002",
-				  "admin_user"
-				],
-				"quiz": {
-				  "id": 456,
-				  "quiz_name": "Тест №1",
-				  "creator_id": 789,
-				  "questions": [
-					{
-					  "id": null,
-					  "question": "Как работает JSON?",
-					  "quiz_id": 0,
-					  "answer": {
-						"id": null,
-						"answer": "..."
-					  },
-					  "type_dependent": ""
-					}
-				  ],
-				  "type_dependent": "",
-				  "question_type": "text"
-				}
-              },
-              {
-				"token": "a1b2c3d4e5f6...",
-				"name": "Моё Лобби",
-				"owner_id": 123,
-				"users": [
-				  "user_001",
-				  "user_002",
-				  "admin_user"
-				],
-				"quiz": {
-				  "id": 456,
-				  "quiz_name": "Тест №1",
-				  "creator_id": 789,
-				  "questions": [
-					{
-					  "id": null,
-					  "question": "Как работает JSON?",
-					  "quiz_id": 0,
-					  "answer": {
-						"id": null,
-						"answer": "..."
-					  },
-					  "type_dependent": ""
-					}
-				  ],
-				  "type_dependent": "",
-				  "question_type": "text"
-				}
-              }
-            ]
+### `GET /api/auth/me`
 
--   `/api/lobby/create`
-    -   Методы: `POST`
-    -   Принимает:
-        
-            {
-              "name": "{lobby name}",
-              "quiz_id": {integer}
-            }
-    -   Выдает:
-        
-            {
-              "token": "{token}"
-            }
+Требует `Authorization`. Возвращает:
 
--   `/api/lobby/join/<token>`
-    -   Методы: `POST`
-    -   Принимает:
-        -   <token> - это токен/идентификатор лобби
+```json
+{"user_id": 1, "login": "alice"}
+```
 
--   `/api/lobby/exit`
-    -   Методы: `POST`
+### `POST /api/auth/change-login`
 
--   `/api/lobby/run`
-    -   Методы: `POST`
-    -   Комментарий: это метод, который запускает игру. Запустить игру может ЛИШЬ ТОЛЬКО обладатель лобби.
+```json
+{"login": "alice", "password": "password123", "new_login": "alice2"}
+```
 
--   `/api/lobby/get-info`
-    -   Методы: `GET`
-    -   Выдает:
-        
-			{
-			  "token": "a1b2c3d4e5f6...",
-			  "name": "Моё Лобби",
-			  "owner_id": 123,
-			  "users": [
-				"user_001",
-				"user_002",
-				"admin_user"
-			  ],
-			  "quiz": {
-				"id": 456,
-				"quiz_name": "Тест №1",
-				"creator_id": 789,
-				"questions": [
-				  {
-					"id": null,
-					"question": "Как работает JSON?",
-					"quiz_id": 0,
-					"answer": {
-					  "id": null,
-					  "answer": "..."
-					},
-					"type_dependent": ""
-				  }
-				],
-				"type_dependent": "",
-				"question_type": "text"
-			  }
-			}
+Успех — `200` с пустым телом.
 
--   `/api/lobby/poll-running/<token>`
-    -   Методы: `GET`
-    -   Принимает:
-        -   <token> - это токен/идентификатор лобби
-    -   Комментарий: вернет пустой ответ с кодом 200, когда запуск все же состоится.
+### `POST /api/auth/change-password`
 
--   `/api/lobby/compare`
-    -   Методы: `PUT`
-    -   Принимает:
-        
-            {
-              "answers": [
-                "answer1",
-                "answer2",
-                "answer3",
-                ...
-              ]
-            }
-    -   Выдает:
-        
-            [
-              true,
-              false,
-              ...
-            ]
-    -   Комментарий: это метод сверки ответов. Пользователь и квиз после запуска лобби уже связаны.
+```json
+{"login": "alice", "password": "password123", "new_password": "newpassword123"}
+```
 
+Успех — `200` с пустым телом.
 
-<a id="org52d8d93"></a>
+## Квизы
 
-### auth
+Все методы требуют Bearer-токен. Владелец квиза определяется по токену.
 
--   `/api/auth/register`
-    -   Методы: `POST`
-    -   Принимает:
-        
-            {
-              "login": "{login}",
-              "password": "{password}"
-            }
-    -   Коды: 200, 403, 418
+### `POST /api/quiz/register`
 
--   `/api/auth/change-login`
-    -   Методы: `POST`
-    -   Принимает:
-        
-            {
-              "login": "{login}",
-              "password": "{password}",
-              "new_login": "{new_login}"
-            }
-    -   Коды: 200, 403, 404
+Создание квиза.
 
--   `/api/auth/change-password`
-    -   Методы: `POST`
-    -   Принимает:
-        
-            {
-              "login": "{login}",
-              "password": "{password}",
-              "new_password": "{new_password}"
-            }
-    -   Коды: 200, 403, 404
+```json
+{
+  "name": "Мой квиз",
+  "questions": [
+    {"text": "Столица Франции?", "answer": "Париж"},
+    {"text": "2 + 2?", "answer": "4"}
+  ]
+}
+```
 
--   `/api/auth/get-token`, `/api/auth/make-token`
-    -   Методы: `POST`
-    -   Принимает:
-        
-            {
-              "login": "{login}",
-              "password": "{password}"
-            }
-    -   Комментарий: `/api/auth/make-token` указывает на то же самое место, что и get-token. Последний оставил ради совместимости.
-    -   Выдает:
-        
-            {
-              "token": "{token}"
-            }
-    -   Коды: 200, 403, 404
+Успех — `200` с пустым телом. `name` и `questions` обязательны; список
+вопросов может быть пустым. Ошибки валидации — `400`.
 
--   `/api/auth/revoke-token`
-    -   Методы: `POST`
-    -   Принимает:
-        
-            {
-              "login": "{login}",
-              "password": "{password}"
-            }
-    -   Коды: 200, 403, 404
+### `DELETE /api/quiz/delete`
 
-<a id="org1234abc"></a>
+Удаление своего квиза.
 
-### quiz
+```json
+{"quiz_id": 1}
+```
 
-В этом разделе необходима авторизация пользователя.
+Успех — `200` с пустым телом. Чужой квиз — `403`, отсутствующий — `404`.
 
--   `/api/quiz/create`
-    -   Методы: `POST`
-    -   Принимает:
-        
-            {
-              "name": "{quiz name}",
-              "questions": [
-                {
-                  "text": "{question text}",
-                  "answer": "{correct answer}"
-                },
-                ...
-              ]
-            }
-    -   Выдает:
-        
-            {
-              "id": {integer},
-              "name": "{quiz name}",
-              "creator_id": {integer},
-              "questions": [
-                {
-                  "id": {integer},
-                  "text": "{question text}",
-                  "answer": {
-                    "id": {integer},
-                    "text": "{correct answer}"
-                  }
-                },
-                ...
-              ]
-            }
-    -   Комментарий: создает новый квиз. `creator_id` подставляется автоматически из токена авторизации.
+### `POST /api/quiz/change`
 
--   `/api/quiz/delete`
-    -   Методы: `DELETE`
-    -   Принимает:
-        
-            {
-              "quiz_id": {integer}
-            }
-    -   Коды: 200, 403
-    -   Комментарий: удаляет квиз и все связанные с ним вопросы и ответы.
+Изменение названия и/или вопросов своего квиза.
 
--   `/api/quiz/change`
-    -   Методы: `POST`
-    -   Принимает:
-        
-            {
-              "id": {integer},
-              "name": "{new quiz name}",
-              "questions": [
-                {
-                  "text": "{new question text}",
-                  "answer": "{new correct answer}"
-                },
-                ...
-              ]
-            }
-    -   Коды: 200, 403
-    -   Комментарий: полностью заменяет существующий квиз новым содержимым. Старые вопросы и ответы удаляются, создаются новые.
+```json
+{
+  "quiz_id": 1,
+  "quiz_name": "Новое название",
+  "questions": [
+    {
+      "id": 10,
+      "quiz_id": 1,
+      "question": "Столица Франции?",
+      "answer": {"id": 5, "answer": "Париж"},
+      "type_dependent": null
+    }
+  ]
+}
+```
 
--   `/api/quiz/search`
-    -   Методы: `GET`
-    -   Принимает:
-        -   query - параметр ссылки. Строка, которая является частью названия квиза.
-        -   creator_id - параметр ссылки (опционально). Целое число, идентификатор создателя.
-    -   Выдает:
-        
-            [
-              {
-                "id": {integer},
-                "name": "{quiz name}",
-                "creator_id": {integer},
-                "questions": [
-                  {
-                    "id": {integer},
-                    "text": "{question text}",
-                    "answer": {
-                      "id": {integer},
-                      "text": "{correct answer}"
-                    }
-                  },
-                  ...
-                ]
-              },
-              ...
-            ]
-    -   Комментарий: поиск квизов по названию (частичное совпадение) и/или по идентификатору создателя. Если параметры не указаны, возвращает ошибку 400.
+Успех — `200` с пустым телом.
+
+### `GET /api/quiz/search?query=&creator_id=`
+
+Поиск по названию. `query` обязателен, но может быть пустым — тогда
+возвращаются все квизы. `creator_id` необязателен.
+
+```json
+[
+  {
+    "id": 1,
+    "quiz_name": "Мой квиз",
+    "creator_id": 1,
+    "questions": [
+      {
+        "id": 10,
+        "question": "Столица Франции?",
+        "quiz_id": 1,
+        "answer": {"id": 5, "answer": "Париж"},
+        "type_dependent": null,
+        "question_type": "prompt"
+      }
+    ]
+  }
+]
+```
+
+## Лобби
+
+Все методы требуют Bearer-токен.
+
+### `POST /api/lobby/create`
+
+```json
+{"name": "Игра 1", "quiz_id": 1}
+```
+
+Ответ: `{"token": "<lobby-token>"}`.
+
+### `POST /api/lobby/join/<lobby_token>`
+
+Присоединение к лобби. Успех — `200` с пустым телом.
+
+### `POST /api/lobby/exit`
+
+Выход из текущего лобби. Успех — `200` с пустым телом.
+
+### `POST /api/lobby/run`
+
+Запуск лобби. Доступен только владельцу. После запуска новые участники
+не подключаются.
+
+### `GET /api/lobby/get-info`
+
+Информация о текущем лобби:
+
+```json
+{
+  "token": "<lobby-token>",
+  "name": "Игра 1",
+  "owner_id": 1,
+  "users": ["alice", "bob"],
+  "quiz": {"id": 1, "quiz_name": "Мой квиз", "questions": []},
+  "scoreboard": []
+}
+```
+
+Ответы на вопросы в объекте `quiz` не раскрываются.
+
+### `GET /api/lobby/poll-running/<lobby_token>`
+
+`200`, если лобби запущено; `202`, если ещё нет.
+
+### `PUT /api/lobby/compare`
+
+Проверка ответов текущего участника.
+
+```json
+{"answers": ["Париж", "4"]}
+```
+
+Ответ:
+
+```json
+{
+  "results": [true, true],
+  "scoreboard": [
+    {"login": "alice", "correct": 2, "total": 2, "submitted": true}
+  ]
+}
+```
+
+Сравнение регистронезависимое, пробелы по краям отбрасываются.
+Если лобби не запущено — `403`; неверное число ответов — `400`.
+
+### `GET /api/lobby/scoreboard`
+
+Таблица результатов текущего лобби. Сортировка: сначала сдавшие, затем по
+числу правильных ответов.
+
+```json
+[
+  {"login": "alice", "correct": 2, "total": 2, "submitted": true},
+  {"login": "bob", "correct": 1, "total": 2, "submitted": true}
+]
+```
+
+### `GET /api/lobby/search?query=`
+
+Поиск лобби по названию. Возвращает список объектов в формате
+`get-info`.
+
+## Коды ошибок
+
+| Код | Значение |
+|---|---|
+| `400` | неверное тело запроса или параметры |
+| `401` | отсутствует или недействителен токен |
+| `403` | действие запрещено (чужой квиз, запуск не владельцем, лобби не запущено) |
+| `404` | квиз или лобби не найдены |
+| `418` | логин уже занят |
+
+## Запуск и тесты
+
+Инструкции по запуску сервера, клиента и тестов — в
+[корневом README проекта](../../README.md).
