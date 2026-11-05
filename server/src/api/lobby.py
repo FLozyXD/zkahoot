@@ -1,19 +1,18 @@
-from src.utils import DBWrapper, UnifiedDict
-from src.classes import Lobby, Quiz, Answer
-from src.api.auth import Authorizer
-
-from flask import Blueprint, request, abort, g
+from flask import Blueprint, abort, g, request
 from flask.views import MethodView
-from time import sleep
+from src.api.auth import Authorizer
+from src.classes import Answer, Quiz
+from src.exceptions import LobbyNotExistsError
+from src.utils import DBWrapper, LobbyDictMgr
 
 lobby_bp = Blueprint("lobby", __name__, url_prefix="/lobby")
 lobby_bp.before_request(Authorizer.require_token)
 
 
 class LobbyAPI(MethodView):
+    lobby_mgr_cls = LobbyDictMgr
+
     def __init__(self) -> None:
-        self.token_lobby_ud = UnifiedDict(name="lobby_user")
-        self.user_lobby_ud = UnifiedDict(name="user_lobby")
         self._verify_request()
 
     def _verify_request(self) -> None:
@@ -23,15 +22,23 @@ class LobbyAPI(MethodView):
 class InnerLobbyAPI(LobbyAPI):
     def __init__(self) -> None:
         super().__init__()
-        if g.user.login not in self.user_lobby_ud:
-            abort(404)
+        with self.lobby_mgr_cls() as lobby_mgr:
+            try:
+                lobby_mgr.select_by_user(g.user)
+            except LobbyNotExistsError:
+                abort(404)
 
 
 class OuterLobbyAPI(LobbyAPI):
     def __init__(self) -> None:
         super().__init__()
-        if g.user.login in self.user_lobby_ud:
-            abort(403)
+        with self.lobby_mgr_cls() as lobby_mgr:
+            try:
+                lobby_mgr.select_by_user(g.user)
+            except LobbyNotExistsError:
+                pass
+            else:
+                abort(403)
 
 
 class CreateLobbyAPI(OuterLobbyAPI):
@@ -56,36 +63,32 @@ class CreateLobbyAPI(OuterLobbyAPI):
             abort(400)
 
     def post(self) -> tuple[dict, int]:
-        lobby = Lobby(None, self.name, g.user.id, [g.user], self.quiz)
-        self.user_lobby_ud[g.user.login] = lobby
-        self.token_lobby_ud[lobby.token] = lobby
+        with self.lobby_mgr_cls() as lobby_mgr:
+            lobby = lobby_mgr.create(self.name, g.user, self.quiz)
         return {"token": lobby.token}, 200
 
 
 class JoinLobbyAPI(OuterLobbyAPI):
     def post(self, token: str) -> tuple[dict, int]:
-        try:
-            lobby = self.token_lobby_ud[token]
-        except KeyError:
-            abort(404)
-        lobby.join(g.user)
-        self.user_lobby_ud[g.user.login] = lobby
+        with self.lobby_mgr_cls() as lobby_mgr:
+            try:
+                lobby_mgr.join(token, g.user)
+            except LobbyNotExistsError:
+                abort(404)
         return "", 200
 
 
 class ExitLobbyAPI(InnerLobbyAPI):
     def post(self) -> tuple[dict, int]:
-        lobby = self.user_lobby_ud[g.user.login]
-        lobby.kick(g.user)
-        del self.user_lobby_ud[g.user.login]
-        if not lobby.users:
-            del self.token_lobby_ud[lobby.token]
+        with self.lobby_mgr_cls() as lobby_mgr:
+            lobby_mgr.kick(g.user)
         return "", 200
 
 
 class RunLobbyAPI(InnerLobbyAPI):
     def post(self) -> tuple[dict, int]:
-        lobby = self.user_lobby_ud[g.user.login]
+        with self.lobby_mgr_cls() as lobby_mgr:
+            lobby = lobby_mgr.select_by_user(g.user)
         if g.user.id == lobby.owner_id:
             lobby.run()
             return "", 200
@@ -95,20 +98,21 @@ class RunLobbyAPI(InnerLobbyAPI):
 
 class InfoLobbyAPI(InnerLobbyAPI):
     def get(self) -> tuple[dict, int]:
-        lobby = self.user_lobby_ud[g.user.login]
+        with self.lobby_mgr_cls() as lobby_mgr:
+            lobby = lobby_mgr.select_by_user(g.user)
         return lobby.to_json(), 200
 
 
 class PollRunningLobbyAPI(LobbyAPI):
     def get(self, token: str) -> tuple[dict, int]:
-        try:
-            lobby = self.token_lobby_ud[token]
-        except KeyError:
-            abort(404)
-        while True:
-            if lobby.running:
-                return "", 200
-            sleep(3)
+        with self.lobby_mgr_cls() as lobby_mgr:
+            try:
+                lobby = lobby_mgr.select_by_token(token)
+            except LobbyNotExistsError:
+                abort(404)
+        if lobby.running:
+            return "", 200
+        return "", 202
 
 
 class CompareLobbyAPI(InnerLobbyAPI):
@@ -121,11 +125,12 @@ class CompareLobbyAPI(InnerLobbyAPI):
         body = request.get_json()
         try:
             body["answers"]
-        except KeyError:
+        except KeyError, TypeError:
             abort(400)
 
     def put(self) -> tuple[dict, int]:
-        lobby = self.user_lobby_ud[g.user.login]
+        with self.lobby_mgr_cls() as lobby_mgr:
+            lobby = lobby_mgr.select_by_user(g.user)
         if lobby.running:
             compared = lobby.compare(self.answers)
             return compared, 200
@@ -144,11 +149,10 @@ class SearchLobbyAPI(LobbyAPI):
             abort(400)
 
     def get(self) -> tuple[list[dict], int]:
-        return [
-            lobby.to_json()
-            for lobby in self.token_lobby_ud.values()
-            if self.query in lobby.name
-        ], 200
+        with self.lobby_mgr_cls() as lobby_mgr:
+            return [
+                lobby.to_json() for lobby in lobby_mgr.select_by_name(self.query)
+            ], 200
 
 
 lobby_bp.add_url_rule("/create", view_func=CreateLobbyAPI.as_view("create"))

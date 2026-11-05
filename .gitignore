@@ -18,3 +18,7 @@ target/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# client
+client/.vscode
+client/node_modules

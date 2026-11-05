@@ -1,0 +1,36 @@
+@startuml CompareAnswersFlow
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor Client as C
+participant "Flask Router" as Flask
+participant "Authorizer" as Auth
+participant "CompareLobbyAPI\n(put)" as View
+participant "LobbyDictMgr" as Mgr
+database "UnifiedDict\n(token_lobby)" as UD
+
+== Authentication ==
+C -> Flask: PUT /lobby/compare\nAuthorization: Bearer {token}\nBody: [{id, answer}, ...]
+Flask -> Auth: require_token()
+Auth --> Flask: g.user
+
+== Verify User is in Lobby ==
+Flask -> View: dispatch_request()
+View -> Mgr: select_by_user(g.user.id)
+Mgr -> UD: user_lobby[{user_id}]
+UD --> Mgr: token
+Mgr -> UD: token_lobby[{token}]
+UD --> Mgr: Lobby object
+Mgr --> View: Lobby
+
+== Validate & Compare ==
+View -> View: _verify_request()
+View -> View: lobby.compare(answers)
+View -> View: quiz.check(answers)\nor immediate_check() loop
+
+== Response ==
+View --> Flask: [True, False, True, ...]
+Flask --> C: 200 OK\n{"result": [true, false, true]}
+
+@enduml

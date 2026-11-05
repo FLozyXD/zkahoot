@@ -1,0 +1,89 @@
+@startuml DomainClasses
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+package "Domain Classes" {
+  abstract class AbstractAnswer {
+    + __eq__(other)
+    + __str__()
+    + __repr__()
+    + __iter__()
+    + {static} to_json()
+    + {static} from_json(data)
+    + {static} from_tuple(tuple)
+  }
+
+  class Answer {
+    + id: int | None
+    + answer: str
+    + __init__(id, answer)
+  }
+
+  abstract class AbstractQuestion {
+    + __str__()
+    + __repr__()
+    + __iter__()
+    + {static} to_json()
+    + {static} from_json(data)
+  }
+
+  class TextQuestion {
+    + id: int | None
+    + quiz_id: int
+    + question: str
+    + answer: Answer
+    + type_dependent: str
+    + {static} question_type = "text"
+    + __init__(id, quiz_id, question, answer, type_dependent)
+  }
+
+  class Quiz {
+    + id: int | None
+    + quiz_name: str
+    + creator_id: int | None
+    + questions: list[TextQuestion]
+    + __init__(id, quiz_name, creator_id, questions)
+    + check(answers)
+    + immediate_check(answer, question_index)
+    + {static} to_json()
+    + {static} from_json(data)
+  }
+
+  class User {
+    + {static} id: int
+    + {static} login: str
+    - password_hash: str
+    + __init__(id_, login, password, /, *, do_hash=True)
+    + __eq__(other)
+    + {static} _hash(data)
+    + {static} to_json()
+    + {static} from_json(data)
+  }
+
+  class Lobby {
+    + token: str
+    + name: str
+    + owner_id: int | None
+    + users: list[User]
+    + quiz: Quiz
+    + running: bool
+    + __init__(token, name, owner_id, users, quiz)
+    + join(user)
+    + kick(user)
+    + run()
+    + compare(answers)
+    + {static} to_json()
+    + {static} from_json(data)
+  }
+}
+
+AbstractAnswer <|-- Answer
+AbstractQuestion <|-- TextQuestion
+
+TextQuestion *-- Answer : contains >
+Quiz *-- TextQuestion : contains >
+Lobby *-- User : contains >
+Lobby *-- Quiz : contains >
+
+@enduml

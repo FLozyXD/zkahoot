@@ -200,18 +200,7 @@
               "login": "{login}",
               "password": "{password}"
             }
-    -   Выдает:
-        
-            "200"
-            {
-              "status": "OK"
-            }
-            
-            "403"
-            {
-              "status": "Forbidden",
-              "cause": "User with login {login} already exists."
-            }
+    -   Коды: 200, 403, 418
 
 -   `/api/auth/change-login`
     -   Методы: `POST`
@@ -222,24 +211,7 @@
               "password": "{password}",
               "new_login": "{new_login}"
             }
-    -   Выдает:
-        
-            "200"
-            {
-              "status": "OK"
-            }
-            
-            "403"
-            {
-              "status": "Forbidden",
-              "cause": "Invalid credentials."
-            }
-            
-            "403"
-            {
-              "status": "Forbidden",
-              "cause": "User with login {login} does not exist."
-            }
+    -   Коды: 200, 403, 404
 
 -   `/api/auth/change-password`
     -   Методы: `POST`
@@ -250,24 +222,7 @@
               "password": "{password}",
               "new_password": "{new_password}"
             }
-    -   Выдает:
-        
-            "200"
-            {
-              "status": "OK"
-            }
-            
-            "403"
-            {
-              "status": "Forbidden",
-              "cause": "Invalid credentials."
-            }
-            
-            "403"
-            {
-              "status": "Forbidden",
-              "cause": "User with login {login} does not exist."
-            }
+    -   Коды: 200, 403, 404
 
 -   `/api/auth/get-token`, `/api/auth/make-token`
     -   Методы: `POST`
@@ -280,23 +235,10 @@
     -   Комментарий: `/api/auth/make-token` указывает на то же самое место, что и get-token. Последний оставил ради совместимости.
     -   Выдает:
         
-            "200"
             {
-              "status": "OK",
               "token": "{token}"
             }
-            
-            "403"
-            {
-              "status": "Forbidden",
-              "cause": "Invalid credentials."
-            }
-            
-            "403"
-            {
-              "status": "Forbidden",
-              "cause": "User with login {login} does not exist."
-            }
+    -   Коды: 200, 403, 404
 
 -   `/api/auth/revoke-token`
     -   Методы: `POST`
@@ -306,25 +248,7 @@
               "login": "{login}",
               "password": "{password}"
             }
-    -   Выдает:
-        
-            "200"
-            {
-              "status": "OK",
-            }
-            
-            "403"
-            {
-              "status": "Forbidden",
-              "cause": "Invalid credentials."
-            }
-            
-            "403"
-            {
-              "status": "Forbidden",
-              "cause": "User with login {login} does not exist."
-            }
-
+    -   Коды: 200, 403, 404
 
 <a id="org1234abc"></a>
 
@@ -373,13 +297,7 @@
             {
               "quiz_id": {integer}
             }
-    -   Выдает:
-        
-            "200"
-            (пустое тело)
-            
-            "403"
-            (если пользователь не является создателем квиза)
+    -   Коды: 200, 403
     -   Комментарий: удаляет квиз и все связанные с ним вопросы и ответы.
 
 -   `/api/quiz/change`
@@ -397,13 +315,7 @@
                 ...
               ]
             }
-    -   Выдает:
-        
-            "200"
-            (пустое тело)
-            
-            "403"
-            (если пользователь не является создателем квиза)
+    -   Коды: 200, 403
     -   Комментарий: полностью заменяет существующий квиз новым содержимым. Старые вопросы и ответы удаляются, создаются новые.
 
 -   `/api/quiz/search`
