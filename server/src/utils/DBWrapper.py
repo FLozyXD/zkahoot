@@ -1,12 +1,14 @@
 from src.classes import Answer, TextQuestion, User, Quiz
 
 from typing import Iterable
+import os
+
 import psycopg2
 
 
 class DBWrapper:
-    def __init__(self, dsn: str = "postgresql://localhost/zkahoot") -> None:
-        self.dsn = dsn
+    def __init__(self, dsn: str | None = None) -> None:
+        self.dsn = dsn or os.getenv("ZKAHOOT_DSN", "postgresql://localhost/zkahoot")
         self.conn = psycopg2.connect(self.dsn)
         self.cur = self.conn.cursor()
 

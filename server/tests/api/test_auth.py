@@ -19,12 +19,12 @@ class AuthTest(unittest.TestCase):
         self.client = app.test_client()
 
         self.valid_user = {
-            "login": "evgeniy",
-            "password": "evgeniy123",
+            "login": "test_user",
+            "password": "test_password_123",
         }
         self.invalid_user = {
-            "login": "evgeniy",
-            "password": "jenya1234",
+            "login": "test_user",
+            "password": "test_password_456",
         }
 
     def tearDown(self):
@@ -59,7 +59,7 @@ class AuthTest(unittest.TestCase):
     def test_change_login_success(self):
         self.client.post("/api/auth/register", json=self.valid_user)
 
-        new_login = "jenya"
+        new_login = "test_user_new"
         payload = {
             "login": self.valid_user["login"],
             "password": self.valid_user["password"],
@@ -109,7 +109,7 @@ class AuthTest(unittest.TestCase):
     def test_change_password_success(self):
         self.client.post("/api/auth/register", json=self.valid_user)
 
-        new_password = "jenya12321"
+        new_password = "new_password_123"
         payload = {
             "login": self.valid_user["login"],
             "password": self.valid_user["password"],

@@ -2,5 +2,6 @@
 port = "5000"
 
 [general.flask_config]
-# я знаю, что он на гитлабе
-SECRET_KEY = "REMOVED_SECRET"
+# Сгенерируйте свой ключ, например:
+# python -c "import secrets; print(secrets.token_hex(32))"
+SECRET_KEY = "change-me-to-a-random-secret"
