@@ -125,7 +125,7 @@ class CompareLobbyAPI(InnerLobbyAPI):
         body = request.get_json()
         try:
             body["answers"]
-        except KeyError, TypeError:
+        except (KeyError, TypeError):
             abort(400)
 
     def put(self) -> tuple[dict, int]:
