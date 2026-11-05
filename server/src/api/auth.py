@@ -15,18 +15,22 @@ class UserAPI(MethodView):
 
     def __init__(self) -> None:
         self._verify_request()
-        body = request.get_json()
+        body = request.get_json(silent=True)
         login, password = body["login"], body["password"]
         self.user = User(None, login, password)
 
     def _verify_request(self) -> None:
-        body = request.get_json()
+        body = request.get_json(silent=True)
+        if not isinstance(body, dict):
+            abort(400)
         try:
             login = body["login"]
             password = body["password"]
         except KeyError:
             abort(400)
         else:
+            if not isinstance(login, str) or not isinstance(password, str):
+                abort(400)
             if len(password) < self.min_password_length or not login:
                 abort(400)
 
@@ -116,7 +120,7 @@ class ChangeLoginAPI(TokenRevokerAPI):
         except KeyError:
             abort(400)
         else:
-            if not new_login:
+            if not isinstance(new_login, str) or not new_login:
                 abort(400)
 
     def post(self) -> tuple[str, int]:
@@ -149,6 +153,8 @@ class ChangePasswordAPI(TokenRevokerAPI):
         except KeyError:
             abort(400)
         else:
+            if not isinstance(new_password, str):
+                abort(400)
             if len(new_password) < self.min_password_length:
                 abort(400)
 

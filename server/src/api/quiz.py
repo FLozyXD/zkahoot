@@ -21,23 +21,40 @@ class QuizAPI(MethodView):
 
 class RegisterQuiz(QuizAPI):
     def _verify_request(self) -> None:
-        body = dict(request.get_json())
+        body = request.get_json(silent=True)
+        if not isinstance(body, dict):
+            abort(400)
+
+        name = body.get("name")
+        questions = body.get("questions")
+        if not isinstance(name, str) or not name.strip():
+            abort(400)
+        if not isinstance(questions, list):
+            abort(400)
 
         resolved_body = {
             "id": None,
-            "quiz_name": body["name"],
+            "quiz_name": name,
             "creator_id": g.user.id,
             "questions": [],
         }
-        for q in body["questions"]:
+        for q in questions:
+            if not isinstance(q, dict):
+                abort(400)
+            text = q.get("text")
+            answer = q.get("answer")
+            if not isinstance(text, str) or not text.strip():
+                abort(400)
+            if not isinstance(answer, str) or not answer.strip():
+                abort(400)
             resolved_body["questions"].append(
                 {
                     "id": None,
                     "quiz_id": None,
-                    "question": q["text"],
+                    "question": text,
                     "answer": {
                         "id": None,
-                        "answer": q["answer"],
+                        "answer": answer,
                     },
                     "type_dependent": None,
                 }
@@ -155,22 +172,20 @@ class ChangeQuiz(QuizAPI):
 
 class SearchQuiz(MethodView):
     def get(self) -> tuple[list[dict], int]:
-        try:
-            quiz_name = request.args["query"]
-        except KeyError:
+        quiz_name = request.args.get("query")
+        if quiz_name is None:
             abort(400)
-        try:
-            creator_id = request.args["creator_id"]
-        except KeyError:
-            with DBWrapper() as dbw:
-                quizzes = dbw.select(Quiz, quiz_name=quiz_name)
-                quizzes_json = [quiz.to_json() for quiz in quizzes]
-        else:
-            with DBWrapper() as dbw:
-                quizzes = dbw.select(
-                    Quiz, quiz_name=quiz_name, creator_id=creator_id
-                )
-                quizzes_json = [quiz.to_json() for quiz in quizzes]
+
+        creator_id = request.args.get("creator_id")
+        if creator_id is not None:
+            try:
+                creator_id = int(creator_id)
+            except ValueError:
+                abort(400)
+
+        with DBWrapper() as dbw:
+            quizzes = dbw.search_quizzes(quiz_name, creator_id)
+            quizzes_json = [quiz.to_json() for quiz in quizzes]
         return quizzes_json, 200
 
 

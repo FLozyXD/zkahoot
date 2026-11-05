@@ -45,7 +45,7 @@ class AbstractLobbyMgr(ABC):
     def join(self, token: str, user: User) -> None: ...
 
     @abstractmethod
-    def kick(self, token: str, user: User) -> None: ...
+    def kick(self, user: User) -> None: ...
 
 
 class DBMgr:
@@ -110,18 +110,20 @@ class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
             quiz,
         )
         self.cur.execute(
-            "insert into lobbies (?, ?, ?, ?)",
+            "insert into lobbies (?, ?, ?, ?, ?)",
             tuple(lobby),
         )
         self.cur.execute(
             "insert into lobbies_users (?, ?)",
             (lobby.token, user.login),
         )
+        self.commit()
         return lobby
 
     def revoke(self, token: str) -> None:
         self.cur.execute("delete from lobbies_users where token = ?", (token,))
         self.cur.execute("delete from lobbies where token = ?", (token,))
+        self.commit()
 
     def select_by_token(self, token: str) -> Lobby:
         lobby_rec = self.cur.execute("select * from lobbies where token = ?", (token,))
@@ -147,7 +149,7 @@ class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
 
     def select_by_name(self, name: str) -> Iterable[Lobby]:
         lobby_r = self.cur.execute(
-            "select token from lobbies where name like ?", (name,)
+            "select token from lobbies where name like ?", (f"%{name}%",)
         )
         lobbies = [self.select_by_token(token[0]) for token in lobby_r]
         return lobbies
@@ -159,15 +161,20 @@ class LobbyDBMgr(AbstractLobbyMgr, DBMgr):
             )
         except IntegrityError:
             raise LobbyNotExistsError(token)
+        self.commit()
 
-    def kick(self, token: str, user: User) -> None:
+    def kick(self, user: User) -> None:
+        lobby = self.select_by_user(user)
         self.cur.execute(
             "delete from lobbies_users where token = ? and login = ?",
-            (token, user.login),
+            (lobby.token, user.login),
         )
-        ul = self.cur.execute("select from lobbies_users where token = ?", (token,))
-        if not ul.fetchone():
-            self.cur.execute("delete from lobbies where token = ?", (token,))
+        remaining = self.cur.execute(
+            "select 1 from lobbies_users where token = ?", (lobby.token,)
+        )
+        if not remaining.fetchone():
+            self.cur.execute("delete from lobbies where token = ?", (lobby.token,))
+        self.commit()
 
 
 class LobbyDictMgr(AbstractLobbyMgr):

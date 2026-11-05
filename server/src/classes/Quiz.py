@@ -30,15 +30,23 @@ class Quiz:
             ]
         )
 
+    @staticmethod
+    def _normalize(answer: Answer) -> str:
+        return answer.answer.strip().casefold()
+
     def check(self, answers: list[Answer]) -> list[bool]:
         return [
-            self.questions[i].answer == answers[i] for i in range(len(answers))
+            self._normalize(self.questions[i].answer)
+            == self._normalize(answers[i])
+            for i in range(len(answers))
         ]
 
     def immediate_check(
         self, answer: Answer, question_index: int
     ) -> bool:  # whynot
-        return self.questions[question_index].answer == answer
+        return self._normalize(
+            self.questions[question_index].answer
+        ) == self._normalize(answer)
 
     def to_json(self) -> dict:
         return {

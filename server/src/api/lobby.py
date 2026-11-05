@@ -44,7 +44,7 @@ class OuterLobbyAPI(LobbyAPI):
 class CreateLobbyAPI(OuterLobbyAPI):
     def __init__(self) -> None:
         super().__init__()
-        body = request.get_json()
+        body = request.get_json(silent=True)
         self.name = body["name"]
         quiz_id = body["quiz_id"]
         with DBWrapper() as dbw:
@@ -55,11 +55,17 @@ class CreateLobbyAPI(OuterLobbyAPI):
                 abort(404)
 
     def _verify_request(self) -> None:
-        body = request.get_json()
+        body = request.get_json(silent=True)
+        if not isinstance(body, dict):
+            abort(400)
         try:
-            body["name"]
-            body["quiz_id"]
+            name = body["name"]
+            quiz_id = body["quiz_id"]
         except KeyError:
+            abort(400)
+        if not isinstance(name, str) or not name.strip():
+            abort(400)
+        if not isinstance(quiz_id, int) or isinstance(quiz_id, bool):
             abort(400)
 
     def post(self) -> tuple[dict, int]:
@@ -118,23 +124,29 @@ class PollRunningLobbyAPI(LobbyAPI):
 class CompareLobbyAPI(InnerLobbyAPI):
     def __init__(self) -> None:
         super().__init__()
-        body = request.get_json()
-        self.answers = [Answer(None, answer) for answer in body["answers"]]
+        body = request.get_json(silent=True)
+        self.answers = [
+            Answer(None, answer.strip().lower()) for answer in body["answers"]
+        ]
 
     def _verify_request(self) -> None:
-        body = request.get_json()
-        try:
-            body["answers"]
-        except (KeyError, TypeError):
+        body = request.get_json(silent=True)
+        if not isinstance(body, dict):
+            abort(400)
+        answers = body.get("answers")
+        if not isinstance(answers, list) or not all(
+            isinstance(answer, str) for answer in answers
+        ):
             abort(400)
 
     def put(self) -> tuple[dict, int]:
         with self.lobby_mgr_cls() as lobby_mgr:
             lobby = lobby_mgr.select_by_user(g.user)
-        if lobby.running:
-            compared = lobby.compare(self.answers)
-            return compared, 200
-        abort(403)
+        if not lobby.running:
+            abort(403)
+        if len(self.answers) != len(lobby.quiz.questions):
+            abort(400)
+        return lobby.compare(self.answers), 200
 
 
 class SearchLobbyAPI(LobbyAPI):

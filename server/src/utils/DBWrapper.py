@@ -15,8 +15,11 @@ class DBWrapper:
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, *args, **kwargs) -> None:
-        self.commit()
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        if exc_type is None:
+            self.commit()
+        else:
+            self.rollback()
         self.close()
 
     def _make_clause(self, **query) -> str:
@@ -163,6 +166,25 @@ class DBWrapper:
             User(*obj_t, do_hash=False)
             for obj_t in self._select_from_table("users", **query)
         ]
+
+    def search_quizzes(
+        self, query: str, creator_id: int | None = None
+    ) -> list[Quiz]:
+        sql = (
+            "SELECT id, quiz_name, creator_id FROM quizzes "
+            "WHERE quiz_name ILIKE %s"
+        )
+        params: list[str | int] = [f"%{query}%"]
+        if creator_id is not None:
+            sql += " AND creator_id = %s"
+            params.append(creator_id)
+        sql += " ORDER BY id"
+        self.cur.execute(sql, params)
+        quizzes = []
+        for obj_t in self.cur.fetchall():
+            questions = self._select_question(quiz_id=obj_t[0])
+            quizzes.append(Quiz(*obj_t, questions))
+        return quizzes
 
     def commit(self) -> None:
         self.conn.commit()

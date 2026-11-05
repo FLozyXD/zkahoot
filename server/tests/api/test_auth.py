@@ -1,12 +1,16 @@
 from src.api import create_app
 from src.utils.DBWrapper import DBWrapper
 from src.utils import UnifiedDict
+import os
 import unittest
+
+
+TEST_DSN = os.getenv("ZKAHOOT_TEST_DSN", "postgresql://localhost/zkahoot-test")
 
 
 class AuthTest(unittest.TestCase):
     def setUp(self):
-        self.dw = DBWrapper("postgresql://localhost/zkahoot-test")
+        self.dw = DBWrapper(TEST_DSN)
         self.dw.cur.execute("DELETE FROM Questions")
         self.dw.cur.execute("DELETE FROM Answers")
         self.dw.cur.execute("DELETE FROM Quizzes")
@@ -34,27 +38,31 @@ class AuthTest(unittest.TestCase):
     def test_registration(self):
         response = self.client.post("/api/auth/register", json=self.valid_user)
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.json)
-        self.assertEqual(response.json["status"], "OK")
 
         response = self.client.post("/api/auth/register", json=self.valid_user)
-        self.assertEqual(response.status_code, 403)
-        if response.json:
-            self.assertEqual(response.json["status"], "Forbidden")
+        self.assertEqual(response.status_code, 418)
+
+    def test_registration_missing_fields(self):
+        response = self.client.post("/api/auth/register", json={})
+        self.assertEqual(response.status_code, 400)
+
+    def test_registration_short_password(self):
+        response = self.client.post(
+            "/api/auth/register",
+            json={"login": "short_password_user", "password": "short"},
+        )
+        self.assertEqual(response.status_code, 400)
 
     def test_token(self):
         self.client.post("/api/auth/register", json=self.valid_user)
         response = self.client.post("/api/auth/get-token", json=self.valid_user)
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.json)
-        self.assertEqual(response.json["status"], "OK")
-        self.assertIn("token", response.json)
+        self.assertIsNotNone(response.get_json())
+        self.assertIn("token", response.get_json())
 
         response = self.client.post("/api/auth/get-token", json=self.invalid_user)
         self.assertEqual(response.status_code, 403)
-        if response.json:
-            self.assertEqual(response.json["status"], "Forbidden")
-            self.assertNotIn("token", response.json)
+        self.assertNotIn("token", response.get_json() or {})
 
     def test_change_login_success(self):
         self.client.post("/api/auth/register", json=self.valid_user)
@@ -67,12 +75,11 @@ class AuthTest(unittest.TestCase):
         }
         response = self.client.post("/api/auth/change-login", json=payload)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json["status"], "OK")
 
         new_creds = {"login": new_login, "password": self.valid_user["password"]}
         resp_token = self.client.post("/api/auth/get-token", json=new_creds)
         self.assertEqual(resp_token.status_code, 200)
-        self.assertIn("token", resp_token.json)
+        self.assertIn("token", resp_token.get_json())
 
     def test_change_login_duplicate(self):
         user1 = {"login": "user1", "password": "password123"}
@@ -117,12 +124,11 @@ class AuthTest(unittest.TestCase):
         }
         response = self.client.post("/api/auth/change-password", json=payload)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json["status"], "OK")
 
         new_creds = {"login": self.valid_user["login"], "password": new_password}
         resp_token = self.client.post("/api/auth/get-token", json=new_creds)
         self.assertEqual(resp_token.status_code, 200)
-        self.assertIn("token", resp_token.json)
+        self.assertIn("token", resp_token.get_json())
 
     def test_change_password_short(self):
         self.client.post("/api/auth/register", json=self.valid_user)

@@ -1,3 +1,4 @@
+import os
 import unittest
 import uuid
 from src.api import create_app
@@ -5,9 +6,12 @@ from src.utils.DBWrapper import DBWrapper
 from src.utils import UnifiedDict
 
 
+TEST_DSN = os.getenv("ZKAHOOT_TEST_DSN", "postgresql://localhost/zkahoot-test")
+
+
 class QuizTest(unittest.TestCase):
     def setUp(self):
-        self.dw = DBWrapper("postgresql://localhost/zkahoot-test")
+        self.dw = DBWrapper(TEST_DSN)
         self.dw.cur.execute("DELETE FROM Questions")
         self.dw.cur.execute("DELETE FROM Answers")
         self.dw.cur.execute("DELETE FROM Quizzes")
@@ -40,98 +44,95 @@ class QuizTest(unittest.TestCase):
 
     def _get_auth_header(self, user_data):
         response = self.client.post("/api/auth/get-token", json=user_data)
-        return {"Authorization": response.json["token"]}
+        return {"Authorization": response.get_json()["token"]}
+
+    def _new_question(self, text, answer):
+        return {"text": text, "answer": answer}
+
+    def _stored_question(self, text, answer):
+        return {
+            "id": None,
+            "quiz_id": None,
+            "question": text,
+            "answer": {"id": None, "answer": answer},
+            "type_dependent": None,
+        }
+
+    def _register(self, name, questions=None):
+        return self.client.post(
+            "/api/quiz/register",
+            json={"name": name, "questions": questions or []},
+            headers=self.header_host,
+        )
+
+    def _search(self, name):
+        return self.client.get(
+            "/api/quiz/search",
+            query_string={"query": name},
+            headers=self.header_host,
+        )
+
+    def _first_quiz_id(self, name):
+        response = self._search(name)
+        return response.get_json()[0]["id"]
 
     def test_register_quiz_success_empty_questions(self):
-        payload = {"id": None, "quiz_name": "Просто квиз", "questions": []}
-        response = self.client.post(
-            "/api/quiz/register", json=payload, headers=self.header_host
-        )
+        response = self._register("Просто квиз")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json.get("status"), "OK")
 
     def test_register_quiz_with_questions(self):
-        payload = {
-            "id": None,
-            "quiz_name": "Квиз с вопросами",
-            "questions": [
-                {
-                    "id": None,
-                    "quiz_id": None,
-                    "question": "Вопросы?",
-                    "question_type": "prompt",
-                    "answer": {"id": None, "answer": "ответы"},
-                    "type_dependent": "",
-                },
-                {
-                    "id": None,
-                    "quiz_id": None,
-                    "question": "Опять вопросы?",
-                    "question_type": "prompt",
-                    "answer": {"id": None, "answer": "Снова ответы"},
-                    "type_dependent": "",
-                },
+        response = self._register(
+            "Квиз с вопросами",
+            [
+                self._new_question("Вопросы?", "ответы"),
+                self._new_question("Опять вопросы?", "Снова ответы"),
             ],
-        }
-        response = self.client.post(
-            "/api/quiz/register", json=payload, headers=self.header_host
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json.get("status"), "OK")
+
+        quizzes = self._search("Квиз с вопросами").get_json()
+        self.assertEqual(len(quizzes), 1)
+        self.assertEqual(len(quizzes[0]["questions"]), 2)
 
     def test_register_quiz_missing_name(self):
-        payload = {"id": None, "questions": []}
         response = self.client.post(
-            "/api/quiz/register", json=payload, headers=self.header_host
+            "/api/quiz/register",
+            json={"questions": []},
+            headers=self.header_host,
         )
         self.assertEqual(response.status_code, 400)
 
     def test_register_quiz_missing_questions_field(self):
-        payload = {"id": None, "quiz_name": "Вопросов нет."}
         response = self.client.post(
-            "/api/quiz/register", json=payload, headers=self.header_host
+            "/api/quiz/register",
+            json={"name": "Вопросов нет."},
+            headers=self.header_host,
         )
         self.assertEqual(response.status_code, 400)
 
     def test_delete_quiz_success(self):
         name = "Квиз для удаления"
-        self.client.post(
-            "/api/quiz/register",
-            json={"id": None, "quiz_name": name, "questions": []},
-            headers=self.header_host,
-        )
-
-        search = self.client.post(
-            "/api/quiz/search", json={"quiz_name": name}, headers=self.header_host
-        )
-        quiz_id = search.json["quizzes"][0]["id"]
+        self._register(name)
+        quiz_id = self._first_quiz_id(name)
 
         response = self.client.delete(
-            "/api/quiz/delete", json={"id": quiz_id}, headers=self.header_host
+            "/api/quiz/delete", json={"quiz_id": quiz_id}, headers=self.header_host
         )
         self.assertEqual(response.status_code, 200)
 
     def test_delete_quiz_not_owner(self):
         name = "Чужой квиз"
-        self.client.post(
-            "/api/quiz/register",
-            json={"id": None, "quiz_name": name, "questions": []},
-            headers=self.header_host,
-        )
-
-        search = self.client.post(
-            "/api/quiz/search", json={"quiz_name": name}, headers=self.header_host
-        )
-        quiz_id = search.json["quizzes"][0]["id"]
+        self._register(name)
+        quiz_id = self._first_quiz_id(name)
 
         response = self.client.delete(
-            "/api/quiz/delete", json={"id": quiz_id}, headers=self.header_player
+            "/api/quiz/delete", json={"quiz_id": quiz_id}, headers=self.header_player
         )
         self.assertEqual(response.status_code, 404)
 
     def test_delete_quiz_not_found(self):
         response = self.client.delete(
-            "/api/quiz/delete", json={"id": 999999}, headers=self.header_host
+            "/api/quiz/delete", json={"quiz_id": 999999}, headers=self.header_host
         )
         self.assertEqual(response.status_code, 404)
 
@@ -143,142 +144,106 @@ class QuizTest(unittest.TestCase):
 
     def test_change_quiz_success(self):
         name = "Квиз для изменения"
-        self.client.post(
-            "/api/quiz/register",
-            json={"id": None, "quiz_name": name, "questions": []},
-            headers=self.header_host,
-        )
-
-        search = self.client.post(
-            "/api/quiz/search", json={"quiz_name": name}, headers=self.header_host
-        )
-        quiz_id = search.json["quizzes"][0]["id"]
+        self._register(name)
+        quiz_id = self._first_quiz_id(name)
 
         payload = {
             "quiz_id": quiz_id,
             "quiz_name": "Сменил имя зачем-то",
-            "questions": [
-                {
-                    "id": None,
-                    "quiz_id": quiz_id,
-                    "question": "Этого не может быть, очередной вопрос?",
-                    "question_type": "prompt",
-                    "answer": {"id": None, "answer": "another one ответ"},
-                    "type_dependent": "",
-                }
-            ],
+            "questions": [self._stored_question("Очередной вопрос?", "another one ответ")],
         }
         response = self.client.post(
             "/api/quiz/change", json=payload, headers=self.header_host
         )
         self.assertEqual(response.status_code, 200)
 
+        quizzes = self._search("Сменил имя зачем-то").get_json()
+        self.assertEqual(len(quizzes), 1)
+        self.assertEqual(quizzes[0]["id"], quiz_id)
+
     def test_change_quiz_not_owner(self):
         name = "Чужой квиз"
-        self.client.post(
-            "/api/quiz/register",
-            json={"id": None, "quiz_name": name, "questions": []},
-            headers=self.header_host,
-        )
+        self._register(name)
+        quiz_id = self._first_quiz_id(name)
 
-        search = self.client.post(
-            "/api/quiz/search", json={"quiz_name": name}, headers=self.header_host
-        )
-        quiz_id = search.json["quizzes"][0]["id"]
-
-        payload = {"quiz_id": quiz_id, "quiz_name": "Хорошая попытка", "questions": []}
+        payload = {
+            "quiz_id": quiz_id,
+            "quiz_name": "Хорошая попытка",
+            "questions": [self._stored_question("Вопрос?", "ответ")],
+        }
         response = self.client.post(
             "/api/quiz/change", json=payload, headers=self.header_player
         )
         self.assertEqual(response.status_code, 404)
 
     def test_change_quiz_not_found(self):
-        payload = {"quiz_id": 999999, "quiz_name": "Мнимый квиз", "questions": []}
+        payload = {
+            "quiz_id": 999999,
+            "quiz_name": "Мнимый квиз",
+            "questions": [self._stored_question("Вопрос?", "ответ")],
+        }
         response = self.client.post(
             "/api/quiz/change", json=payload, headers=self.header_host
         )
         self.assertEqual(response.status_code, 404)
 
     def test_change_quiz_missing_fields(self):
-        payload = {"quiz_id": 1}
         response = self.client.post(
-            "/api/quiz/change", json=payload, headers=self.header_host
+            "/api/quiz/change", json={"quiz_id": 1}, headers=self.header_host
         )
         self.assertEqual(response.status_code, 400)
 
     def test_search_quiz_success(self):
         name = "Квиз в активном поиске"
-        self.client.post(
-            "/api/quiz/register",
-            json={"id": None, "quiz_name": name, "questions": []},
-            headers=self.header_host,
-        )
+        self._register(name)
 
-        response = self.client.post(
-            "/api/quiz/search", json={"quiz_name": name}, headers=self.header_host
-        )
+        response = self._search(name)
         self.assertEqual(response.status_code, 200)
-        self.assertGreaterEqual(len(response.json.get("quizzes", [])), 1)
+        self.assertGreaterEqual(len(response.get_json()), 1)
+
+    def test_search_quiz_partial_match(self):
+        self._register("Квиз про космос")
+        self._register("Квиз про океан")
+
+        response = self._search("космос")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.get_json()), 1)
+        self.assertEqual(response.get_json()[0]["quiz_name"], "Квиз про космос")
+
+    def test_search_all_with_empty_query(self):
+        self._register("Первый квиз")
+        self._register("Второй квиз")
+
+        response = self._search("")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.get_json()), 2)
 
     def test_search_quiz_not_found(self):
-        response = self.client.post(
-            "/api/quiz/search",
-            json={"quiz_name": "Полностью вымышленное название qqq"},
-            headers=self.header_host,
-        )
+        response = self._search("Полностью вымышленное название qqq")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json.get("quizzes"), [])
+        self.assertEqual(response.get_json(), [])
 
     def test_search_quiz_missing_field(self):
-        response = self.client.post(
-            "/api/quiz/search", json={}, headers=self.header_host
-        )
+        response = self.client.get("/api/quiz/search", headers=self.header_host)
         self.assertEqual(response.status_code, 400)
 
     def test_delete_quiz_with_questions(self):
         name = "Квиз с вопросами на удаление"
-        payload = {
-            "id": None,
-            "quiz_name": name,
-            "questions": [
-                {
-                    "id": None,
-                    "quiz_id": None,
-                    "question": "вопросы?",
-                    "question_type": "prompt",
-                    "answer": {"id": None, "answer": "ответы"},
-                    "type_dependent": "",
-                }
-            ],
-        }
-        self.client.post("/api/quiz/register", json=payload, headers=self.header_host)
-
-        search = self.client.post(
-            "/api/quiz/search", json={"quiz_name": name}, headers=self.header_host
-        )
-        quiz_id = search.json["quizzes"][0]["id"]
+        self._register(name, [self._new_question("вопросы?", "ответы")])
+        quiz_id = self._first_quiz_id(name)
 
         response = self.client.delete(
-            "/api/quiz/delete", json={"id": quiz_id}, headers=self.header_host
+            "/api/quiz/delete", json={"quiz_id": quiz_id}, headers=self.header_host
         )
         self.assertEqual(response.status_code, 200)
 
-        search_after = self.client.post(
-            "/api/quiz/search", json={"quiz_name": name}, headers=self.header_host
-        )
-        self.assertEqual(search_after.json.get("quizzes"), [])
+        search_after = self._search(name)
+        self.assertEqual(search_after.get_json(), [])
 
     def test_change_quiz_only_name(self):
         name = "Квиз только название"
-        create_payload = {"id": None, "quiz_name": name, "questions": []}
-        self.client.post(
-            "/api/quiz/register", json=create_payload, headers=self.header_host
-        )
-
-        search = self.client.post(
-            "/api/quiz/search", json={"quiz_name": name}, headers=self.header_host
-        )
-        quiz_id = search.json["quizzes"][0]["id"]
+        self._register(name)
+        quiz_id = self._first_quiz_id(name)
 
         payload = {"quiz_id": quiz_id, "quiz_name": "Новое имя"}
         response = self.client.post(
@@ -288,28 +253,12 @@ class QuizTest(unittest.TestCase):
 
     def test_change_quiz_only_questions(self):
         name = "Квиз только вопросы"
-        create_payload = {"id": None, "quiz_name": name, "questions": []}
-        self.client.post(
-            "/api/quiz/register", json=create_payload, headers=self.header_host
-        )
-
-        search = self.client.post(
-            "/api/quiz/search", json={"quiz_name": name}, headers=self.header_host
-        )
-        quiz_id = search.json["quizzes"][0]["id"]
+        self._register(name)
+        quiz_id = self._first_quiz_id(name)
 
         payload = {
             "quiz_id": quiz_id,
-            "questions": [
-                {
-                    "id": None,
-                    "quiz_id": quiz_id,
-                    "question": "Новый вопрос?",
-                    "question_type": "prompt",
-                    "answer": {"id": None, "answer": "новый ответ"},
-                    "type_dependent": "",
-                }
-            ],
+            "questions": [self._stored_question("Новый вопрос?", "новый ответ")],
         }
         response = self.client.post(
             "/api/quiz/change", json=payload, headers=self.header_host
@@ -317,23 +266,14 @@ class QuizTest(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_no_token(self):
-        payload = {"id": None, "quiz_name": "Без токена", "questions": []}
+        payload = {"name": "Без токена", "questions": []}
         response = self.client.post("/api/quiz/register", json=payload)
         self.assertEqual(response.status_code, 401)
 
     def test_register_quiz_invalid_question_missing_answer(self):
         payload = {
-            "id": None,
-            "quiz_name": "Плохой квиз",
-            "questions": [
-                {
-                    "id": None,
-                    "quiz_id": None,
-                    "question": "Вопрос, на который нет ответа",
-                    "question_type": "prompt",
-                    "type_dependent": "",
-                }
-            ],
+            "name": "Плохой квиз",
+            "questions": [{"text": "Вопрос, на который нет ответа"}],
         }
         response = self.client.post(
             "/api/quiz/register", json=payload, headers=self.header_host
