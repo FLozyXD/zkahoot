@@ -168,7 +168,22 @@ class LobbyTest(unittest.TestCase):
             headers=self.player_header,
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json(), [True, True])
+        payload = response.get_json()
+        self.assertEqual(payload["results"], [True, True])
+        player_row = next(
+            row
+            for row in payload["scoreboard"]
+            if row["login"] == self.player["login"]
+        )
+        self.assertTrue(player_row["submitted"])
+        self.assertEqual(player_row["correct"], 2)
+        self.assertEqual(player_row["total"], 2)
+
+        response = self.client.get(
+            "/api/lobby/scoreboard", headers=self.player_header
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), payload["scoreboard"])
 
     def test_compare_requires_running_lobby(self):
         token = self._create_lobby().get_json()["token"]

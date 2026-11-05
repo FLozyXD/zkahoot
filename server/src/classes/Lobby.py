@@ -11,7 +11,7 @@ class Lobby:
         token: str | None = None,
         name: str | None = None,
         owner_id: int | None = None,
-        users: list[User] = [],
+        users: list[User] | None = None,
         quiz: Quiz = None,
     ) -> None:
         if token is None:
@@ -23,9 +23,10 @@ class Lobby:
         else:
             self.name = name
         self.owner_id = owner_id
-        self.users = users
+        self.users = users if users is not None else []
         self.quiz = quiz
         self.running = False
+        self.results = {}
 
     def join(self, user: User) -> None:
         if not self.running and not len([u for u in self.users if u == user]):
@@ -46,6 +47,44 @@ class Lobby:
             return self.quiz.check(answers)
         raise ValueError
 
+    def save_result(self, user: User, answers: list[Answer]) -> list[bool]:
+        compared = self.compare(answers)
+        self.results[user.login] = {
+            "login": user.login,
+            "correct": sum(compared),
+            "total": len(compared),
+            "results": compared,
+        }
+        return compared
+
+    def scoreboard(self) -> list[dict]:
+        rows = []
+        for user in self.users:
+            result = self.results.get(user.login)
+            if result is None:
+                rows.append(
+                    {
+                        "login": user.login,
+                        "correct": 0,
+                        "total": len(self.quiz.questions),
+                        "submitted": False,
+                    }
+                )
+            else:
+                rows.append(
+                    {
+                        "login": user.login,
+                        "correct": result["correct"],
+                        "total": result["total"],
+                        "submitted": True,
+                    }
+                )
+        return sorted(
+            rows,
+            key=lambda row: (row["submitted"], row["correct"]),
+            reverse=True,
+        )
+
     def __iter__(self) -> Iterator:
         return iter(
             [
@@ -64,6 +103,7 @@ class Lobby:
             "owner_id": self.owner_id,
             "users": [p.to_json()["login"] for p in self.users],
             "quiz": self.quiz.to_json(),
+            "scoreboard": self.scoreboard(),
         }
         for q in json["quiz"]["questions"]:
             del q["answer"]
